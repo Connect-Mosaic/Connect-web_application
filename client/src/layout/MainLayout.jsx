@@ -1,16 +1,16 @@
 import React from "react";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer";
 
 
-function MainLayout({children}){
+function MainLayout({ children }) {
     return (
         <div className="main-layout">
-            
-            <Navbar/>
+
+            <Navbar />
             <main>{children}</main>
-            <Footer/>
-            
+            <Footer />
+
         </div>
 
     );
