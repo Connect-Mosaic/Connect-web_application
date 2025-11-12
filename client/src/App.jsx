@@ -5,7 +5,7 @@ import HomePage from "./page/HomePage";
 import EventPage from "./page/EventPage";
 import ChatPage from "./page/ChatPage";
 import MapPage from "./page/MapPage";
-
+import LoginPage from "./page/LoginPage";
 
 function App() {
 
@@ -25,6 +25,7 @@ function App() {
 
                 <Route path='/map' element={<MainLayout><MapPage /></MainLayout>} />
 
+                <Route path="/login" element={<LoginPage />} />
             </Routes>
 
         </Router>
