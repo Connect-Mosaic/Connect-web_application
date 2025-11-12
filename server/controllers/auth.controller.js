@@ -5,7 +5,8 @@ import config from "../configs/config.js";
 import { successResponse, errorResponse } from '../helpers/apiResponse.js';
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body.user;
+    const { rememberMe } = req.body.rememberMe || false;
     // Validate input
     if (!email || !password) {
       return res.json(errorResponse('Email and password are required'));
@@ -25,7 +26,7 @@ const login = async (req, res) => {
         role: user.role
       },
       config.jwtSecret,
-      { expiresIn: '24h' }
+      { expiresIn: rememberMe ? '7d' : '24h' }
     );
     return res.json(successResponse('Login successful', {
       token,
@@ -33,6 +34,7 @@ const login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        profile_picture: user.profile_picture
       },
     }));
   } catch (err) {
@@ -61,7 +63,7 @@ const hasAuthorization = (req, res, next) => {
 };
 
 const register = async (req, res) => {
-  const { first_name, last_name, email, password, university, program, interests, location } = req.body;
+  const { first_name, last_name, email, password, university, program, interests, location, profile_picture } = req.body;
   console.log('[Auth] register called', {
     first_name,
     last_name,
@@ -70,6 +72,7 @@ const register = async (req, res) => {
     program,
     interests,
     location,
+    profile_picture
   }); // Do NOT log passwords
 
   try {
@@ -91,7 +94,8 @@ const register = async (req, res) => {
       university,
       program,
       interests,
-      location
+      location,
+      profile_picture
     });
 
     console.log('[Auth] Saving new user to DB for email:', email);
@@ -120,7 +124,8 @@ const register = async (req, res) => {
         university: user.university,
         program: user.program,
         interests: user.interests,
-        location: user.location
+        location: user.location,
+        profile_picture: user.profile_picture
       }
     }));
     // return res.json("User registered successfully");
