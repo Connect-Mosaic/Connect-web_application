@@ -61,9 +61,10 @@ const hasAuthorization = (req, res, next) => {
 };
 
 const register = async (req, res) => {
-  const { name, email, password, university, program, interests, location } = req.body;
+  const { first_name, last_name, email, password, university, program, interests, location } = req.body;
   console.log('[Auth] register called', {
-    name,
+    first_name,
+    last_name,
     email,
     university,
     program,
@@ -83,7 +84,8 @@ const register = async (req, res) => {
     // Create new user
     console.log('[Auth] Creating new user for email:', email);
     const user = new User({
-      name,
+      first_name,
+      last_name,
       email,
       password,
       university,
@@ -112,7 +114,8 @@ const register = async (req, res) => {
       token,
       user: {
         id: user._id,
-        name: user.name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         email: user.email,
         university: user.university,
         program: user.program,

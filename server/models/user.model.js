@@ -2,7 +2,12 @@ import mongoose from 'mongoose';
 import crypto from "crypto";
 
 const UserSchema = new mongoose.Schema({
-  name: {
+  first_name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  last_name: {
     type: String,
     required: true,
     trim: true
