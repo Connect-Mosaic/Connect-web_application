@@ -14,7 +14,7 @@ function EventPage(){
                 <EventList/>
             </div>
 
-        </div>
+        </div>  
 
     );
 }
