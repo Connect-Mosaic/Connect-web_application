@@ -1,0 +1,122 @@
+/* Entire page wrapper */
+.signup-wrapper {
+  background-color: #e8e6ff; /* Light-purple page background */
+  min-height: 100vh;
+}
+
+/* Main centered purple container */
+.signup-container {
+  background-color: #f2d7ff; /* Purple block like wireframe */
+  margin: 40px auto;
+  width: 90%;
+  max-width: 1100px;
+  padding: 0 40px;
+  border-radius: 8px;
+}
+
+.signup-full-bg {
+  background-color: #f2d7ff;
+  width: 100vw;
+  padding: 60px 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* Connect title + subtitle side-by-side */
+.signup-header-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.signup-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #000;
+  padding-right: 40px;
+}
+
+.signup-divider-vertical {
+  width: 2px;
+  height: 60px;     /* Adjust based on how tall you want it */
+  background-color: #000;
+  opacity: 0.8;
+}
+
+.signup-subtitle {
+  font-size: 1rem;
+  color: #333;
+  max-width: 300px;
+  margin: 0px;
+  padding-left: 40px;
+}
+
+
+/* Register section */
+.signup-form-title {
+  margin-top: 40px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #000;
+}
+
+.signup-divider {
+  border: none;
+  height: 2px;
+  background-color: #000;
+  margin: 5px 0 20px 0;
+}
+
+/* Form layout */
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.signup-row {
+  display: flex;
+  gap: 20px;
+}
+
+/* Input styling */
+.signup-input {
+  flex: 1;
+  padding: 12px 18px;
+  border: 1px solid #aaa;
+  border-radius: 25px;
+  font-size: 1rem;
+}
+
+.signup-input.full {
+  width: 100%;
+}
+
+/* Button */
+.signup-button {
+    width: 150px;
+    margin-top: 1rem;
+    border-radius: 25px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+}
+
+.signup-button:hover {
+  background-color: #a9a7ff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .signup-row {
+    flex-direction: column;
+  }
+
+  .signup-header-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .signup-container {
+    padding: 25px;
+  }
+}
