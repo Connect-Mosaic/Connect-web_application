@@ -18,46 +18,31 @@
   margin: 0;
   font-size: 1.5rem;
   font-weight: bold;
-  color: #222; /* Slightly darker for emphasis */
+  color: #222; 
 }
 
-/* Center content area (for layout balance) */
-.navbar-center {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  justify-content: center;
-  margin-left: 2rem;
-}
-
-/* Search bar container */
+/* ======================================
+   Search Bar
+   ====================================== */
 .navbar-search {
-  flex: 1;
-  max-width: 400px;
+  flex: none;         
+  width: 350px;        
+  margin-left: 0;      
 }
 
-/* Search input box */
 .search-input {
   width: 100%;
   padding: 0.5rem 1rem;
-  border: 1px solid #ccc;
+  border: none;
   border-radius: 20px;
   outline: none;
-  background-color: white;
-  color: #333;
-  transition: border-color 0.2s ease-in-out;
-}
-
-/* Highlight border on focus */
-.search-input:focus {
-  border-color: #888;
 }
 
 /* Navigation links section */
 .navbar-links {
   display: flex;
   gap: 2rem;
-  margin-left: auto;
+  margin-left: 5rem;
   align-items: center;
 }
 
@@ -119,6 +104,7 @@
     flex-wrap: wrap;
   }
 
+  /* Search bar */
   .navbar-search {
     order: 3;
     margin: 1rem 0 0 0;

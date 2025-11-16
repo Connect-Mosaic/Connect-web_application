@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./SignupPage.css";
 import Navbar from "../components/Navbar";
 import { register } from "../apis/api-auth";
+import Footer from "../components/Footer"; // Import Footer
 
 function SignupPage() {
   // Form data (clean, backend-ready)
@@ -225,6 +226,7 @@ function SignupPage() {
           </form>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

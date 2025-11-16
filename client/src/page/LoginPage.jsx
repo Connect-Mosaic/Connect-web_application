@@ -1,6 +1,7 @@
 import React from "react";
 import "./LoginPage.css";
 import Navbar from "../components/Navbar"; // Import Navbar
+import Footer from "../components/Footer"; // Import Footer
 
 function LoginPage() {
   return (
@@ -40,6 +41,7 @@ function LoginPage() {
           </form>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

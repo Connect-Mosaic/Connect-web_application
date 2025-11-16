@@ -7,12 +7,14 @@ import ChatPage from "./page/ChatPage";
 import MapPage from "./page/MapPage";
 import LoginPage from "./page/LoginPage";
 import SignupPage from "./page/SignupPage";
+import About from "./page/About";
+import Resources from "./page/Resources";
+
 
 
 function App() {
 
     return (
-
         <Router>
 
 
@@ -30,10 +32,13 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 
                 <Route path="/signup" element={<SignupPage />} />
+
+                 <Route path="/about" element={<About />} />
+
+                 <Route path="/resources" element={<Resources />} />
             </Routes>
 
         </Router>
-
 
 
     );
