@@ -2,7 +2,8 @@ import { api } from './client';
 import auth from './auth-helper';
 
 // User body example:{
-//   "name": "tetUser",
+//   "first_name": "tetUser",
+//   "last_name": "example",
 //   "email": "tetUser@example.com",
 //   "password": "mypassword123",
 //   "role": "student",

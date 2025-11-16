@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./SignupPage.css";
 import Navbar from "../components/Navbar";
+import { register } from "../apis/api-auth";
 
 function SignupPage() {
   // Form data (clean, backend-ready)
@@ -87,23 +88,27 @@ function SignupPage() {
       return;
     }
 
-    // ============================
-    // SEND TO BACKEND
-    // ============================
+
     try {
-      const res = await fetch("http://localhost:5000/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const requestBody = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        address: formData.address,
+        biography: formData.biography,
+        interests: formData.interests.split(",").map((interest) => interest.trim()),
+      };
+      const res = await register(requestBody);
 
-      const data = await res.json();
-      console.log("Backend response:", data);
+      console.log("Backend response:", res);
 
-      if (res.ok) {
+      if (res.success) {
         alert("Account created successfully!");
+        // redirect to home page
+        window.location.href = "/";
       } else {
-        alert("Signup failed: " + data.message);
+        alert("Signup failed: " + res.message);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -131,7 +136,7 @@ function SignupPage() {
           <hr className="signup-divider" />
 
           <form className="signup-form" onSubmit={handleSubmit}>
-            
+
             {/* Row 1 */}
             <div className="signup-row">
               <input
