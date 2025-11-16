@@ -9,6 +9,7 @@ import LoginPage from "./page/LoginPage";
 import SignupPage from "./page/SignupPage";
 import About from "./page/About";
 import Resources from "./page/Resources";
+import ProfilePage from "./page/ProfilePage";
 
 
 
@@ -32,6 +33,8 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 
                 <Route path="/signup" element={<SignupPage />} />
+
+                <Route path="profile" element={<ProfilePage />} />
 
                  <Route path="/about" element={<About />} />
 
