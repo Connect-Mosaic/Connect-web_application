@@ -5,19 +5,33 @@ import config from "../configs/config.js";
 import { successResponse, errorResponse } from '../helpers/apiResponse.js';
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body.user;
-    const { rememberMe } = req.body.rememberMe || false;
+    const { email, password } = req.body.user || {};
+    const rememberMe = req.body.rememberMe || false;
+
+    console.log('[Auth] login input', { email, rememberMe }); // do NOT log passwords
+
     // Validate input
     if (!email || !password) {
+      console.log('[Auth] login failed - missing email or password');
       return res.json(errorResponse('Email and password are required'));
     }
+
     // Find user
+    console.log('[Auth] Looking up user for email:', email);
     let user = await User.findOne({ email: email });
-    if (!user) return res.json(errorResponse("User not found"));
+    if (!user) {
+      console.log('[Auth] login failed - user not found for email:', email);
+      return res.json(errorResponse("User not found"));
+    }
+    console.log('[Auth] user found with id:', user._id);
+
     // Check password
     if (!user.authenticate(password)) {
+      console.log('[Auth] login failed - authentication failed for user id:', user._id);
       return res.json(errorResponse("Email and password don't match."));
     }
+    console.log('[Auth] authentication successful for user id:', user._id);
+
     // Generate JWT token
     const token = jwt.sign(
       {
@@ -28,16 +42,19 @@ const login = async (req, res) => {
       config.jwtSecret,
       { expiresIn: rememberMe ? '7d' : '24h' }
     );
+    console.log('[Auth] JWT token generated for user id:', user._id, 'expiresIn:', rememberMe ? '7d' : '24h');
+
     return res.json(successResponse('Login successful', {
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        profile_picture: user.profile_picture
+        profile_picture_url: user.profile_picture_url
       },
     }));
   } catch (err) {
+    console.error('[Auth] Login error:', err && err.stack ? err.stack : err);
     return res.json(errorResponse("Could not sign in"));
   }
 };
@@ -55,7 +72,7 @@ const requireSignin = expressjwt({
 });
 
 const hasAuthorization = (req, res, next) => {
-  const authorized = req.profile && req.auth && req.profile._id == req.auth._id;
+  const authorized = req.profile && req.auth && req.profile._id == req.auth.userId;
   if (!authorized) {
     return res.json(errorResponse('User is not authorized to perform this action'));
   }
@@ -63,7 +80,7 @@ const hasAuthorization = (req, res, next) => {
 };
 
 const register = async (req, res) => {
-  const { first_name, last_name, email, password, university, program, interests, location, profile_picture } = req.body;
+  const { first_name, last_name, email, password, university, program, interests, location, profile_picture_url } = req.body;
   console.log('[Auth] register called', {
     first_name,
     last_name,
@@ -72,7 +89,7 @@ const register = async (req, res) => {
     program,
     interests,
     location,
-    profile_picture
+    profile_picture_url
   }); // Do NOT log passwords
 
   try {
@@ -95,7 +112,7 @@ const register = async (req, res) => {
       program,
       interests,
       location,
-      profile_picture
+      profile_picture_url
     });
 
     console.log('[Auth] Saving new user to DB for email:', email);
@@ -125,7 +142,7 @@ const register = async (req, res) => {
         program: user.program,
         interests: user.interests,
         location: user.location,
-        profile_picture: user.profile_picture
+        profile_picture_url: user.profile_picture_url
       }
     }));
     // return res.json("User registered successfully");

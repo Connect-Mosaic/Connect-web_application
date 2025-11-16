@@ -29,7 +29,7 @@ const UserSchema = new mongoose.Schema({
   interests: [String],
   university: String,
   program: String,
-  profile_picture: String,
+  profile_picture_url: String,
   bio: String,
   location: String,
   salt: String,

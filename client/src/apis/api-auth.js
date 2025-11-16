@@ -1,7 +1,7 @@
 import { api } from './client';
 import auth from './auth-helper';
 
-// User body example:{
+// register user body example:{
 //   "first_name": "tetUser",
 //   "last_name": "example",
 //   "email": "tetUser@example.com",
@@ -22,6 +22,15 @@ export const register = async (user) => {
   }
   return res;
 }
+//
+// Login body example:
+// {
+//     "user":{
+//      "email": "albert4@example.com",
+//      "password":"mypassword123"
+//     },
+//     "rememberMe":"true"
+// }
 export const login = async (user, rememberMe) => {
   const res = await api.post('/api/auth/login/', { user, rememberMe });
   if (res.success && res.token) {
