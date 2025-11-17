@@ -101,7 +101,7 @@ const register = async (req, res) => {
     program,
     interests,
     location,
-    profile_picture_url
+    profile_picture
   }); // Do NOT log passwords
 
   try {
@@ -125,7 +125,7 @@ const register = async (req, res) => {
       interests,
       bio,
       location,
-      profile_picture_url
+      profile_picture
     });
 
 

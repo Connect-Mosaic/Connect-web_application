@@ -10,7 +10,7 @@ import auth from './auth-helper';
 //   "interests": ["AI", "Web Development", "Cooking"],
 //   "university": "Centennial College",
 //   "program": "Software Engineering",
-//   "profilePicture": "https://example.com/avatar.jpg",
+//   "profile_picture": "https://example.com/avatar.jpg",
 //   "bio": "I love building full-stack apps and exploring AI features.",
 //   "location": "Toronto, Canada"
 // }

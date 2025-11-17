@@ -1,6 +1,7 @@
 import config from "./configs/config.js";
 import app from "./express.js";
 import mongoose from "mongoose";
+import { swaggerSpec, swaggerUiMiddleware } from "./configs/swagger.js";
 
 
 mongoose.Promise = global.Promise;
@@ -32,3 +33,6 @@ app.listen(config.port, (err) => {
     }
     console.info("Server started on port %s.", config.port);
 });
+
+// Setup Swagger API docs route
+app.use("/api-docs", swaggerUiMiddleware.serve, swaggerUiMiddleware.setup(swaggerSpec));

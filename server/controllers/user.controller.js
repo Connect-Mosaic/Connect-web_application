@@ -56,7 +56,7 @@ const read = (req, res) => {
 const update = async (req, res) => {
   try {
     console.log('[User] update called for user id:', req.profile._id);
-    const allowed = ['first_name', 'last_name', 'email', 'password', 'interests', 'university', 'role', 'program', 'profile_picture_url', 'bio', 'location']; //wait for more fields
+    const allowed = ['first_name', 'last_name', 'email', 'password', 'interests', 'university', 'role', 'program', 'profile_picture', 'bio', 'location']; //wait for more fields
     const updates = Object.keys(req.body);
     const isValid = updates.every((key) => allowed.includes(key));
     if (!isValid) {
@@ -94,7 +94,7 @@ const remove = async (req, res) => {
   try {
     let user = req.profile;
     let deletedUser = await user.deleteOne();
-    
+
     deletedUser.hashed_password = undefined;
     deletedUser.salt = undefined;
     res.json(successResponse('User deleted successfully', deletedUser));
