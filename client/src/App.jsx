@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 import MainLayout from "./layout/MainLayout";
 import HomePage from "./page/HomePage";
 import EventPage from "./page/EventPage";
@@ -11,42 +12,69 @@ import About from "./page/About";
 import Resources from "./page/Resources";
 import ProfilePage from "./page/ProfilePage";
 
-
-
 function App() {
 
-    return (
-        <Router>
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Check if user logined or not
+  useEffect(() => {
+    const token = localStorage.getItem("jwt");
+    setIsLoggedIn(!!token);
+  }, []);
 
+  const handleLogout = () => {
+  localStorage.removeItem("jwt");
+  localStorage.removeItem("user");
+  setIsLoggedIn(false);
+  window.location.href = "/login";
+};
 
-            <Routes>
+  return (
+    <Router>
+      <Routes>
 
-                <Route path='/' element={<MainLayout><HomePage /></MainLayout>} />
+        <Route path="/" element={
+          <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+            <HomePage />
+          </MainLayout>
+        } />
 
-                <Route path='/events' element={<MainLayout><EventPage /></MainLayout>} />
+        <Route path="/events" element={
+          <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+            <EventPage />
+          </MainLayout>
+        } />
 
-                <Route path='/chat' element={<MainLayout><ChatPage /></MainLayout>} />
+        <Route path="/chat" element={
+          <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+            <ChatPage />
+          </MainLayout>
+        } />
 
-                <Route path='/map' element={<MainLayout><MapPage /></MainLayout>} />
+        <Route path="/map" element={
+          <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+            <MapPage />
+          </MainLayout>
+        } />
 
-                <Route path="/login" element={<LoginPage />} />
-                
-                <Route path="/signup" element={<SignupPage />} />
+        <Route path="/login" element={
+          <LoginPage setIsLoggedIn={setIsLoggedIn} />
+        } />
 
-                <Route path="profile" element={<ProfilePage />} />
+        <Route path="/signup" element={<SignupPage />} />
 
-                 <Route path="/about" element={<About />} />
+        <Route path="/profile" element={
+        <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+        <ProfilePage />
+         </MainLayout>
+} />
+        <Route path="/about" element={<About />} />
 
-                 <Route path="/resources" element={<Resources />} />
-            </Routes>
+        <Route path="/resources" element={<Resources />} />
 
-        </Router>
-
-
-    );
-
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;
-

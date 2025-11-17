@@ -114,4 +114,18 @@
   .navbar-links {
     gap: 1rem;
   }
+
+  .logout-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: #333;
+}
+
+.logout-link:hover {
+  color: #666;
+  transform: translateY(-1px);
+}
 }

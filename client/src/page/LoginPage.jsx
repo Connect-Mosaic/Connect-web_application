@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 
-function LoginPage() {
+function LoginPage({ setIsLoggedIn }) {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -24,7 +24,7 @@ function LoginPage() {
             email,
             password,
           },
-          rememberMe: false, // <— include this
+          rememberMe: false,
         }),
       });
 
@@ -35,9 +35,12 @@ function LoginPage() {
         return;
       }
 
-      // SUCCESS
+      // Login Seccess
       localStorage.setItem("jwt", data.data.token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
+
+      // Update Login State
+      setIsLoggedIn(true);
 
       navigate("/");
     } catch (err) {

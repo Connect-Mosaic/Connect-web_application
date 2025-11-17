@@ -9,6 +9,7 @@ import {
 } from "../apis/user";
 import "./ProfilePage.css";
 import placeholderProfile from "../image/placeholder-profile.jpg";
+import { useNavigate } from "react-router-dom";
 
 /* ======================================================
       SAFE JWT PARSING FOR LOCALSTORAGE
@@ -29,6 +30,7 @@ function safeParseJWT(raw) {
 function ProfilePage() {
   const fileInputRef = useRef(null);
   const galleryInputRef = useRef(null);
+  const navigate = useNavigate();
 
   /* ======================================================
           LOAD JWT + INITIAL USER
@@ -36,45 +38,37 @@ function ProfilePage() {
   const jwt = safeParseJWT(localStorage.getItem("jwt") ?? "{}");
   const token = jwt?.token || null;
 
-  // IMPORTANT: React State User (UI uses this)
+  // React state for user
   const [userState, setUserState] = useState(jwt?.user || null);
-
   const userId = userState?._id || userState?.id;
 
   /* ======================================================
-      REFETCH USER (Reusable Function)
-    ====================================================== */
-    async function fetchUserFromDB() {
-        if (!token || !userId) return;
-
-        try {
-            const res = await getUser(userId);    // Axios response (or data)
-            const data = res?.data || res;        // handle both cases
-            const freshUser = data.user || data;  // handle { user: {...} } or plain user
-
-            const stored = safeParseJWT(localStorage.getItem("jwt")) || {};
-            stored.token = stored.token || token;
-            stored.user = freshUser;
-            localStorage.setItem("jwt", JSON.stringify(stored));
-
-            setUserState(freshUser);
-        } catch (err) {
-            console.log("Error fetching user:", err);
-        }
-    }
-
-
-
-
-  /* ======================================================
-          REFETCH USER ON LOAD
+      REFETCH USER FROM DATABASE
   ====================================================== */
+  async function fetchUserFromDB() {
+    if (!token || !userId) return;
+
+    try {
+      const res = await getUser(userId);
+      const data = res?.data || res;
+      const freshUser = data.user || data;
+
+      const stored = safeParseJWT(localStorage.getItem("jwt")) || {};
+      stored.token = stored.token || token;
+      stored.user = freshUser;
+      localStorage.setItem("jwt", JSON.stringify(stored));
+
+      setUserState(freshUser);
+    } catch (err) {
+      console.log("Error fetching user:", err);
+    }
+  }
+
+  // Fetch user on load
   useEffect(() => {
-    fetchUserFromDB();   // run only once
+    fetchUserFromDB();
     // eslint-disable-next-line
-    }, []);
-
-
+  }, []);
 
   /* ======================================================
           PROFILE + GALLERY STATE
@@ -135,49 +129,39 @@ function ProfilePage() {
   };
 
   /* ======================================================
-          SAVE PROFILE (INSTANT UI UPDATE)
-  ====================================================== */
-  /* ======================================================
       SAVE PROFILE (INSTANT UI UPDATE)
-====================================================== */
-    const saveProfileChanges = async () => {
-        try {
-            const updates = {
-            ...editForm,
-            interests: editForm.interests
-                .split(",")
-                .map((i) => i.trim())
-                .filter((i) => i.length > 0),
-            };
+  ====================================================== */
+  const saveProfileChanges = async () => {
+    try {
+      const updates = {
+        ...editForm,
+        interests: editForm.interests
+          .split(",")
+          .map((i) => i.trim())
+          .filter((i) => i.length > 0),
+      };
 
-            const res = await updateUser(userId, updates);
+      const res = await updateUser(userId, updates);
+      const data = res?.data || res;
+      const updatedUser = data.user || data;
 
-            // Unwrap response safely
-            const data = res?.data || res;        // Axios response or plain data
-            const updatedUser = data.user || data; // { user: {...} } OR plain user
+      setUserState(updatedUser);
 
-            // Update React state so UI changes instantly
-            setUserState(updatedUser);
+      const stored = safeParseJWT(localStorage.getItem("jwt")) || {};
+      stored.token = stored.token || token;
+      stored.user = updatedUser;
+      localStorage.setItem("jwt", JSON.stringify(stored));
 
-            // Sync localStorage
-            const stored = safeParseJWT(localStorage.getItem("jwt")) || {};
-            stored.token = stored.token || token;
-            stored.user = updatedUser;
-            localStorage.setItem("jwt", JSON.stringify(stored));
-
-            alert("Profile updated!");
-            closeEditModal();
-        } catch (err) {
-            console.error(err);
-            alert("Failed to update profile.");
-        }
-    };
-
-
-
+      alert("Profile updated!");
+      closeEditModal();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update profile.");
+    }
+  };
 
   /* ======================================================
-          PROFILE PHOTO UPLOAD (INSTANT)
+          PROFILE PHOTO UPLOAD
   ====================================================== */
   const handleImageClick = () => fileInputRef.current.click();
 
@@ -194,7 +178,11 @@ function ProfilePage() {
       const result = await uploadProfilePhoto(userId, selectedFile);
 
       if (result.success && result.user) {
-        const updatedUser = { ...userState, profile_picture: result.user.profile_picture };
+        const updatedUser = {
+          ...userState,
+          profile_picture: result.user.profile_picture,
+        };
+
         setUserState(updatedUser);
 
         const savedJwt = safeParseJWT(localStorage.getItem("jwt"));
@@ -212,7 +200,7 @@ function ProfilePage() {
   };
 
   /* ======================================================
-          GALLERY UPLOAD (INSTANT)
+          GALLERY UPLOAD
   ====================================================== */
   const handleGalleryTileClick = () => galleryInputRef.current.click();
 
@@ -224,12 +212,12 @@ function ProfilePage() {
       const result = await uploadGalleryPhoto(userId, file);
 
       if (result.photos) {
-        const updatedUser = { ...userState, photos: result.photos };
-        setUserState(updatedUser);
+        const updated = { ...userState, photos: result.photos };
+        setUserState(updated);
         setGallery(result.photos);
 
         const stored = safeParseJWT(localStorage.getItem("jwt"));
-        stored.user = updatedUser;
+        stored.user = updated;
         localStorage.setItem("jwt", JSON.stringify(stored));
       }
     } catch (err) {
@@ -239,29 +227,25 @@ function ProfilePage() {
   };
 
   /* ======================================================
-          NO USER CHECK
+          NOT LOGGED IN → SHOW MESSAGE + RETURN NULL
   ====================================================== */
   if (!userState) {
     return (
       <>
-        <Navbar />
         <div style={{ padding: "100px", textAlign: "center" }}>
           <h2>You are not logged in.</h2>
         </div>
-        <Footer />
       </>
     );
   }
 
+  const user = userState;
+
   /* ======================================================
-          RENDER UI (ALL USING userState)
+          RENDER UI
   ====================================================== */
-
-  const user = userState; // cleaner alias
-
   return (
     <>
-      <Navbar />
 
       <div className="profile-wrapper">
         <div className="profile-card">
@@ -319,6 +303,7 @@ function ProfilePage() {
 
             <p className="profile-subtitle">{user.program || "Student"}</p>
 
+            {/* INTERESTS */}
             <h3 className="section-title">Interests</h3>
             <div className="interests-list">
               {user.interests?.map((interest, index) => (
@@ -328,9 +313,11 @@ function ProfilePage() {
               ))}
             </div>
 
+            {/* BIO */}
             <h3 className="section-title">Personal Biography</h3>
             <p>{user.bio || "No biography yet."}</p>
 
+            {/* ALBUMS */}
             <h3 className="section-title">Albums</h3>
             <div className="album-grid">
               {gallery.map((photo, index) => (
@@ -339,14 +326,13 @@ function ProfilePage() {
                     src={`http://localhost:3000${photo}`}
                     alt="gallery"
                     className="album-photo"
-                    onClick={() =>
-                      openImage(`http://localhost:3000${photo}`)
-                    }
+                    onClick={() => openImage(`http://localhost:3000${photo}`)}
                     style={{ cursor: "pointer" }}
                   />
                 </div>
               ))}
 
+              {/* ADD PHOTO TILE */}
               <div className="album-tile add-photo" onClick={handleGalleryTileClick}>
                 +
                 <input
@@ -451,7 +437,6 @@ function ProfilePage() {
         </div>
       )}
 
-      <Footer />
     </>
   );
 }
