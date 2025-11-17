@@ -68,6 +68,21 @@ function ProfilePage() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [gallery, setGallery] = useState(user?.photos || []);
 
+  /* ======================================================
+          EDIT PROFILE MODAL STATE
+  ====================================================== */
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    first_name: user?.first_name || "",
+    last_name: user?.last_name || "",
+    email: user?.email || "",
+    university: user?.university || "",
+    program: user?.program || "",
+    bio: user?.bio || "",
+    interests: user?.interests?.join(", ") || ""
+  });
+
   /* Sync gallery with user data */
   useEffect(() => {
     if (user?.photos) setGallery(user.photos);
@@ -171,6 +186,164 @@ function ProfilePage() {
   };
 
   /* ======================================================
+          EDIT PROFILE MODAL COMPONENT
+  ====================================================== */
+
+  const EditProfileModal = () => {
+    const handleInputChange = (e) => {
+      const { name, value } = e.target;
+      setEditFormData({
+        ...editFormData,
+        [name]: value
+      });
+    };
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      
+      try {
+        // Prepare data for API call
+        const updateData = {
+          ...editFormData,
+          interests: editFormData.interests.split(",").map(interest => interest.trim()).filter(interest => interest)
+        };
+
+        // Call your update user API
+        const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(updateData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          // Update local state
+          const updatedUser = { ...user, ...updateData };
+          setUser(updatedUser);
+
+          // Update localStorage
+          const savedJwt = safeParseJWT(localStorage.getItem("jwt"));
+          savedJwt.user = updatedUser;
+          localStorage.setItem("jwt", JSON.stringify(savedJwt));
+
+          // Close modal
+          setIsEditModalOpen(false);
+          alert("Profile updated successfully!");
+        } else {
+          alert("Failed to update profile: " + (result.message || "Unknown error"));
+        }
+      } catch (error) {
+        console.error("Update profile error:", error);
+        alert("Error updating profile. Please try again.");
+      }
+    };
+
+    if (!isEditModalOpen) return null;
+
+    return (
+      <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
+        <div className="modal-content profile-edit-modal" onClick={(e) => e.stopPropagation()}>
+          <button className="close-button" onClick={() => setIsEditModalOpen(false)}>×</button>
+          
+          <h2>Edit Profile</h2>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="form-row">
+              <div className="form-group">
+                <label>First Name</label>
+                <input
+                  type="text"
+                  name="first_name"
+                  value={editFormData.first_name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  name="last_name"
+                  value={editFormData.last_name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                name="email"
+                value={editFormData.email}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>University</label>
+              <input
+                type="text"
+                name="university"
+                value={editFormData.university}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Program</label>
+              <input
+                type="text"
+                name="program"
+                value={editFormData.program}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Interests (comma separated)</label>
+              <input
+                type="text"
+                name="interests"
+                value={editFormData.interests}
+                onChange={handleInputChange}
+                placeholder="e.g., coding, basketball, music"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Bio</label>
+              <textarea
+                name="bio"
+                value={editFormData.bio}
+                onChange={handleInputChange}
+                rows="4"
+                placeholder="Tell us about yourself..."
+              />
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" className="cancel-btn" onClick={() => setIsEditModalOpen(false)}>
+                Cancel
+              </button>
+              <button type="submit" className="save-btn">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  /* ======================================================
           RENDER
   ====================================================== */
 
@@ -225,7 +398,24 @@ function ProfilePage() {
               <h1 className="profile-name">
                 {user.first_name} {user.last_name}
               </h1>
-              <button className="edit-profile-btn">Edit Profile</button>
+              <button 
+                className="edit-profile-btn" 
+                onClick={() => {
+                  // Pre-fill form with current user data
+                  setEditFormData({
+                    first_name: user.first_name || "",
+                    last_name: user.last_name || "",
+                    email: user.email || "",
+                    university: user.university || "",
+                    program: user.program || "",
+                    bio: user.bio || "",
+                    interests: user.interests?.join(", ") || ""
+                  });
+                  setIsEditModalOpen(true);
+                }}
+              >
+                Edit Profile
+              </button>
             </div>
 
             <p className="profile-subtitle">{user.program || "Student"}</p>
@@ -287,6 +477,9 @@ function ProfilePage() {
           />
         </div>
       )}
+
+      {/* EDIT PROFILE MODAL */}
+      <EditProfileModal />
 
       <Footer />
     </>
