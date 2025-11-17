@@ -2,25 +2,26 @@ import React, { useState } from "react";
 import "./SignupPage.css";
 import Navbar from "../components/Navbar";
 import { register } from "../apis/api-auth";
-import Footer from "../components/Footer"; // Import Footer
+import Footer from "../components/Footer";
 
 function SignupPage() {
-  // Form data (clean, backend-ready)
+  // Full form data
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    address: "",
+    password: "",
+    confirmPassword: "",
+    university: "",
+    program: "",
     biography: "",
     interests: "",
-    password: "",
   });
-
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Handle inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData({
       ...formData,
       [name]: value,
@@ -28,11 +29,9 @@ function SignupPage() {
   };
 
   // Email validation
-  const isValidEmail = (email) => {
-    return /\S+@\S+\.\S+/.test(email);
-  };
+  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
-  // Password validation (at least 8 characters, letters + numbers)
+  // Password validation
   const isValidPassword = (password) => {
     return (
       password.length >= 8 &&
@@ -41,14 +40,11 @@ function SignupPage() {
     );
   };
 
-  // Form submit
+  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ============================
     // VALIDATION
-    // ============================
-
     if (formData.firstName.trim().length < 2) {
       alert("First name must be at least 2 characters.");
       return;
@@ -65,17 +61,22 @@ function SignupPage() {
     }
 
     if (!isValidPassword(formData.password)) {
-      alert("Password must be at least 8 characters, contain letters and numbers.");
+      alert("Password must be at least 8 characters, including letters and numbers.");
       return;
     }
 
-    if (formData.password !== confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match.");
       return;
     }
 
-    if (formData.address.trim().length < 3) {
-      alert("Please enter a valid address.");
+    if (formData.university.trim().length < 2) {
+      alert("Please enter your university.");
+      return;
+    }
+
+    if (formData.program.trim().length < 2) {
+      alert("Please enter your program.");
       return;
     }
 
@@ -89,25 +90,30 @@ function SignupPage() {
       return;
     }
 
+    // REQUEST BODY FOR BACKEND
+    const requestBody = {
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      email: formData.email,
+      password: formData.password,
+
+      // new correct fields
+      university: formData.university,
+      program: formData.program,
+
+      // backend expects "bio"
+      bio: formData.biography,
+
+      // convert comma-separated interests -> array
+      interests: formData.interests.split(",").map((i) => i.trim()),
+    };
 
     try {
-      const requestBody = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-        address: formData.address,
-        biography: formData.biography,
-        interests: formData.interests.split(",").map((interest) => interest.trim()),
-      };
       const res = await register(requestBody);
-
-      console.log("Backend response:", res);
 
       if (res.success) {
         alert("Account created successfully!");
-        // redirect to home page
-        window.location.href = "/";
+        window.location.href = "/login";
       } else {
         alert("Signup failed: " + res.message);
       }
@@ -175,14 +181,16 @@ function SignupPage() {
 
               <input
                 type="password"
+                name="confirmPassword"
                 placeholder="Retype Password"
                 className="signup-input"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                value={formData.confirmPassword}
+                onChange={handleChange}
                 required
               />
             </div>
 
+            {/* Email */}
             <input
               type="email"
               name="email"
@@ -193,15 +201,29 @@ function SignupPage() {
               required
             />
 
+            {/* University */}
             <input
               type="text"
-              name="address"
-              placeholder="Address"
+              name="university"
+              placeholder="University"
               className="signup-input full"
-              value={formData.address}
+              value={formData.university}
               onChange={handleChange}
+              required
             />
 
+            {/* Program */}
+            <input
+              type="text"
+              name="program"
+              placeholder="Program of Study"
+              className="signup-input full"
+              value={formData.program}
+              onChange={handleChange}
+              required
+            />
+
+            {/* Biography */}
             <input
               type="text"
               name="biography"
@@ -211,10 +233,11 @@ function SignupPage() {
               onChange={handleChange}
             />
 
+            {/* Interests */}
             <input
               type="text"
               name="interests"
-              placeholder="Interests"
+              placeholder="Interests (comma separated)"
               className="signup-input full"
               value={formData.interests}
               onChange={handleChange}
@@ -226,6 +249,7 @@ function SignupPage() {
           </form>
         </div>
       </div>
+
       <Footer />
     </div>
   );

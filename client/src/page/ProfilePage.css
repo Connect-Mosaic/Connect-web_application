@@ -153,3 +153,22 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* Interests container */
+.interests-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px; /* spacing between tags */
+  margin-bottom: 10px;
+}
+
+/* Individual interest tags */
+.interest-tag {
+  background-color: #eef0ff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  display: inline-block;
+  white-space: nowrap; /* prevent breaking inside tag */
+}

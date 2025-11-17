@@ -104,7 +104,7 @@ const remove = async (req, res) => {
 };
 
 /* --------------------------
-   ⭐ NEW: UPLOAD PROFILE PHOTO
+    NEW: UPLOAD PROFILE PHOTO
 -------------------------- */
 const uploadProfilePhoto = async (req, res) => {
   try {
@@ -113,29 +113,42 @@ const uploadProfilePhoto = async (req, res) => {
 
     const filePath = `/uploads/profile/${req.file.filename}`;
 
-    // Update user document
+    // Update user in DB
     const updatedUser = await User.findByIdAndUpdate(
       req.params.userId,
       { profile_picture: filePath },
       { new: true }
-    );
+    ).select("-hashed_password -salt");
 
-    updatedUser.hashed_password = undefined;
-    updatedUser.salt = undefined;
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     return res.json({
-      message: "Profile photo updated",
-      photoUrl: filePath,
-      user: updatedUser,
+      success: true,
+      message: "Profile updated",
+      user: {
+        id: updatedUser._id,
+        first_name: updatedUser.first_name,
+        last_name: updatedUser.last_name,
+        email: updatedUser.email,
+        university: updatedUser.university,
+        program: updatedUser.program,
+        interests: updatedUser.interests,
+        bio: updatedUser.bio,
+        profile_picture: updatedUser.profile_picture,
+        photos: updatedUser.photos,
+        role: updatedUser.role,
+      }
     });
 
   } catch (err) {
     console.error("Upload error:", err);
-    return res.status(500).json({
-      error: "Server error uploading photo",
-    });
+    return res.status(500).json({ error: "Server error uploading photo" });
   }
 };
+
+
 
 // Upload photo
 const uploadGalleryPhoto = async (req, res) => {

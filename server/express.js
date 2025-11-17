@@ -1,5 +1,4 @@
 import express from "express";
-import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import compress from "compression";
 import cors from "cors";
@@ -10,29 +9,40 @@ import userRoutes from "./routes/user.routes.js";
 
 const app = express();
 
+// Allow frontend to access uploaded files
+app.use("/uploads", express.static("uploads"));
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
+// Allow large form-data uploads (multer needs this BEFORE routes)
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
+
+// Serve frontend build (optional)
 const CURRENT_WORKING_DIR = process.cwd();
-app.use(cors({
-  origin: 'http://localhost:5173',  // Allow frontend to access from this domain
-  credentials: true,                // Allow cookies to be sent
-}));
 app.use(express.static(path.join(CURRENT_WORKING_DIR, "dist/app")));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Routes — CORS already applied above
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+
+// Other middleware
 app.use(cookieParser());
 app.use(compress());
 app.use(helmet());
-app.use(cors());
+
+// Global error handler
 app.use((err, req, res, next) => {
   if (err.name === "UnauthorizedError") {
-    res.status(401).json({ error: err.name + ": " + err.message });
-  } else if (err) {
-    res.json({ error: err.name + ": " + err.message });
-    console.log(err);
+    return res.status(401).json({ error: err.name + ": " + err.message });
   }
+  console.error(err);
+  res.status(500).json({ error: err.message });
 });
 
 export default app;

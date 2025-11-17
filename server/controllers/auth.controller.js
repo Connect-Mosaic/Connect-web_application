@@ -48,11 +48,23 @@ const login = async (req, res) => {
       token,
       user: {
         id: user._id,
-        name: user.name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         email: user.email,
-        profile_picture_url: user.profile_picture_url
-      },
+
+        university: user.university,
+        program: user.program,
+        interests: user.interests,
+        bio: user.bio,
+
+        profile_picture: user.profile_picture,
+        photos: user.photos,
+
+        role: user.role,
+        createdAt: user.createdAt,
+      }
     }));
+
   } catch (err) {
     console.error('[Auth] Login error:', err && err.stack ? err.stack : err);
     return res.json(errorResponse("Could not sign in"));
@@ -80,7 +92,7 @@ const hasAuthorization = (req, res, next) => {
 };
 
 const register = async (req, res) => {
-  const { first_name, last_name, email, password, university, program, interests, location, profile_picture_url } = req.body;
+  const { first_name, last_name, email, password, university, program, interests, bio, location, profile_picture_url } = req.body;
   console.log('[Auth] register called', {
     first_name,
     last_name,
@@ -111,9 +123,11 @@ const register = async (req, res) => {
       university,
       program,
       interests,
+      bio,
       location,
       profile_picture_url
     });
+
 
     console.log('[Auth] Saving new user to DB for email:', email);
     await user.save();
@@ -138,13 +152,20 @@ const register = async (req, res) => {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
+
         university: user.university,
         program: user.program,
         interests: user.interests,
-        location: user.location,
-        profile_picture_url: user.profile_picture_url
+        bio: user.bio,
+
+        profile_picture: user.profile_picture,
+        photos: user.photos,
+
+        role: user.role,
+        createdAt: user.createdAt,
       }
     }));
+
     // return res.json("User registered successfully");
   } catch (err) {
     console.error('[Auth] Registration error:', err && err.stack ? err.stack : err);

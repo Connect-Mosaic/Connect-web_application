@@ -1,18 +1,32 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { uploadProfilePhoto, uploadGalleryPhoto } from "../apis/user";
+import { uploadProfilePhoto, uploadGalleryPhoto, getUser } from "../apis/user";
 import "./ProfilePage.css";
 import placeholderProfile from "../image/placeholder-profile.jpg";
+
+
 
 function ProfilePage() {
   const fileInputRef = useRef(null);
   const galleryInputRef = useRef(null);
 
-  const jwt = JSON.parse(localStorage.getItem("jwt"));
-  const user = jwt?.user;
+  // -------------------------
+  // SAFE JWT + USER LOADING
+  // -------------------------
+  let rawJwt = localStorage.getItem("jwt");
+  let jwt;
 
-  // If no user is logged in → show nothing
+  try {
+    jwt = rawJwt ? JSON.parse(rawJwt) : null;
+  } catch {
+    // raw token (e.g., "eyJhbGciOi...")
+    jwt = { token: rawJwt, user: JSON.parse(localStorage.getItem("user") || "{}") };
+  }
+
+  const user = jwt?.user;
+  const token = jwt?.token;
+
   if (!user) {
     return (
       <>
@@ -25,13 +39,17 @@ function ProfilePage() {
     );
   }
 
-  const userId = user._id;
+  const userId = user.id;
+
 
   const [preview, setPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [gallery, setGallery] = useState(user?.photos || []);
 
-  /* -------------------- PROFILE PHOTO UPLOAD -------------------- */
+  /* ======================================================
+          PROFILE IMAGE UPLOAD
+  ====================================================== */
+
   const handleImageClick = () => fileInputRef.current.click();
 
   const handleImageChange = (e) => {
@@ -42,17 +60,40 @@ function ProfilePage() {
   };
 
   const handleSaveProfile = async () => {
-    try {
-      await uploadProfilePhoto(userId, selectedFile);
-      alert("Profile photo updated!");
-      setSelectedFile(null);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to upload photo.");
-    }
-  };
+        try {
+            const result = await uploadProfilePhoto(userId, selectedFile);
+            console.log("UPLOAD RESULT:", result);
+            if (result.success && result.user) {
+            // 1. Load existing user object
+            const storedUser = JSON.parse(localStorage.getItem("user"));
 
-  /* -------------------- GALLERY UPLOAD -------------------- */
+            // 2. Update only the profile picture
+            const updatedUser = {
+                ...storedUser,
+                profile_picture: result.user.profile_picture
+            };
+
+            // 3. Save back to localStorage (persistent)
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+            }
+
+            alert("Profile photo updated!");
+            setSelectedFile(null);
+
+            // 4. Refresh UI to show new image
+            window.location.reload();
+
+        } catch (e) {
+            console.error(e);
+            alert("Failed to upload photo.");
+        }
+    };
+
+
+  /* ======================================================
+          GALLERY UPLOAD
+  ====================================================== */
+
   const handleGalleryTileClick = () => galleryInputRef.current.click();
 
   const handleGalleryChange = async (e) => {
@@ -81,11 +122,17 @@ function ProfilePage() {
             {/* PROFILE IMAGE */}
             <div className="profile-image-wrapper" onClick={handleImageClick}>
               <img
-                src={preview || user.profile_picture || placeholderProfile}
+                src={
+                  preview ||
+                  (user.profile_picture
+                    ? `http://localhost:3000${user.profile_picture}`
+                    : placeholderProfile)
+                }
                 className="profile-image"
                 alt="Profile"
               />
               <div className="upload-overlay">Upload</div>
+
               <input
                 type="file"
                 ref={fileInputRef}
@@ -95,7 +142,7 @@ function ProfilePage() {
               />
             </div>
 
-            {/* UNIVERSITY INFO */}
+            {/* UNIVERSITY */}
             <div className="sidebar-info">
               <p className="sidebar-title">University</p>
 
@@ -120,10 +167,12 @@ function ProfilePage() {
           {/* RIGHT COLUMN */}
           <div className="profile-right-column">
 
+            {/* HEADER NAME */}
             <div className="profile-header-top">
               <h1 className="profile-name">
                 {user.first_name} {user.last_name}
               </h1>
+
               <button className="edit-profile-btn">Edit Profile</button>
             </div>
 
@@ -136,8 +185,10 @@ function ProfilePage() {
 
             {user.interests && user.interests.length > 0 ? (
               <div className="interests-list">
-                {user.interests.map((i, index) => (
-                  <span className="interest-tag" key={index}>{i}</span>
+                {user.interests.map((interest, index) => (
+                  <span className="interest-tag" key={index}>
+                    {interest}
+                  </span>
                 ))}
               </div>
             ) : (
@@ -148,8 +199,8 @@ function ProfilePage() {
               </>
             )}
 
-            {/* PERSONAL INFO */}
-            <h3 className="section-title">Personal Information</h3>
+            {/* PERSONAL BIOGRAPHY */}
+            <h3 className="section-title">Personal Biography</h3>
 
             {user.bio ? (
               <p>{user.bio}</p>
