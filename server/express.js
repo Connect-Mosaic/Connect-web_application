@@ -29,7 +29,7 @@ app.use(express.static(path.join(CURRENT_WORKING_DIR, "dist/app")));
 
 // Routes — CORS already applied above
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/user", userRoutes);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
