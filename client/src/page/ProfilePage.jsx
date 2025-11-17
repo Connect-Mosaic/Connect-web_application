@@ -1,14 +1,18 @@
 import React, { useRef, useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { uploadProfilePhoto, uploadGalleryPhoto, getUser } from "../apis/user";
+import {
+  uploadProfilePhoto,
+  uploadGalleryPhoto,
+  getUser,
+  updateUser,
+} from "../apis/user";
 import "./ProfilePage.css";
 import placeholderProfile from "../image/placeholder-profile.jpg";
 
 /* ======================================================
-      SAFE PARSER FOR JWT IN LOCALSTORAGE
+      SAFE JWT PARSING FOR LOCALSTORAGE
 ====================================================== */
-
 function safeParseJWT(raw) {
   if (!raw) return null;
 
@@ -27,77 +31,68 @@ function ProfilePage() {
   const galleryInputRef = useRef(null);
 
   /* ======================================================
-          LOAD JWT SAFELY
+          LOAD JWT + INITIAL USER
   ====================================================== */
-
-  const jwt = safeParseJWT(localStorage.getItem("jwt"));
+  const jwt = safeParseJWT(localStorage.getItem("jwt") ?? "{}");
   const token = jwt?.token || null;
 
-  const [user, setUser] = useState(jwt?.user || null);
-  const userId = user?._id || user?.id;
+  // IMPORTANT: React State User (UI uses this)
+  const [userState, setUserState] = useState(jwt?.user || null);
+
+  const userId = userState?._id || userState?.id;
 
   /* ======================================================
-          RE-FETCH USER ON PAGE LOAD
-  ====================================================== */
-
-  useEffect(() => {
+      REFETCH USER (Reusable Function)
+    ====================================================== */
     async function fetchUserFromDB() {
-      if (!token || !userId) return;
+        if (!token || !userId) return;
 
-      try {
-        const freshUser = await getUser(userId, token);
+        try {
+            const res = await getUser(userId);    // Axios response (or data)
+            const data = res?.data || res;        // handle both cases
+            const freshUser = data.user || data;  // handle { user: {...} } or plain user
 
-        setUser(freshUser);
+            const stored = safeParseJWT(localStorage.getItem("jwt")) || {};
+            stored.token = stored.token || token;
+            stored.user = freshUser;
+            localStorage.setItem("jwt", JSON.stringify(stored));
 
-        const stored = safeParseJWT(localStorage.getItem("jwt"));
-        stored.user = freshUser;
-        localStorage.setItem("jwt", JSON.stringify(stored));
-      } catch (err) {
-        console.log("Error fetching fresh user:", err);
-      }
+            setUserState(freshUser);
+        } catch (err) {
+            console.log("Error fetching user:", err);
+        }
     }
 
-    fetchUserFromDB();
-  }, [token, userId]);
+
+
 
   /* ======================================================
-          STATE
+          REFETCH USER ON LOAD
   ====================================================== */
+  useEffect(() => {
+    fetchUserFromDB();   // run only once
+    // eslint-disable-next-line
+    }, []);
 
+
+
+  /* ======================================================
+          PROFILE + GALLERY STATE
+  ====================================================== */
   const [preview, setPreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [gallery, setGallery] = useState(user?.photos || []);
+  const [gallery, setGallery] = useState(userState?.photos || []);
 
-  /* Sync gallery with user data */
   useEffect(() => {
-    if (user?.photos) setGallery(user.photos);
-  }, [user]);
-
-  if (!user) {
-    return (
-      <>
-        <Navbar />
-        <div style={{ padding: "100px", textAlign: "center" }}>
-          <h2>You are not logged in.</h2>
-        </div>
-        <Footer />
-      </>
-    );
-  }
+    if (userState?.photos) setGallery(userState.photos);
+  }, [userState]);
 
   /* ======================================================
-          FULLSCREEN IMAGE POPUP
+          FULLSCREEN POPUP
   ====================================================== */
-
   const [fullscreenImage, setFullscreenImage] = useState(null);
-
-  const openImage = (src) => {
-    setFullscreenImage(src);
-  };
-
-  const closeImage = () => {
-    setFullscreenImage(null);
-  };
+  const openImage = (src) => setFullscreenImage(src);
+  const closeImage = () => setFullscreenImage(null);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -108,14 +103,88 @@ function ProfilePage() {
   }, []);
 
   /* ======================================================
-          PROFILE IMAGE UPLOAD
+          EDIT PROFILE MODAL
   ====================================================== */
+  const [isEditing, setIsEditing] = useState(false);
 
+  const [editForm, setEditForm] = useState({
+    first_name: userState?.first_name || "",
+    last_name: userState?.last_name || "",
+    university: userState?.university || "",
+    program: userState?.program || "",
+    bio: userState?.bio || "",
+    interests: userState?.interests ? userState.interests.join(", ") : "",
+  });
+
+  const openEditModal = () => {
+    setEditForm({
+      first_name: userState?.first_name || "",
+      last_name: userState?.last_name || "",
+      university: userState?.university || "",
+      program: userState?.program || "",
+      bio: userState?.bio || "",
+      interests: userState?.interests ? userState.interests.join(", ") : "",
+    });
+    setIsEditing(true);
+  };
+
+  const closeEditModal = () => setIsEditing(false);
+
+  const handleEditChange = (e) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  /* ======================================================
+          SAVE PROFILE (INSTANT UI UPDATE)
+  ====================================================== */
+  /* ======================================================
+      SAVE PROFILE (INSTANT UI UPDATE)
+====================================================== */
+    const saveProfileChanges = async () => {
+        try {
+            const updates = {
+            ...editForm,
+            interests: editForm.interests
+                .split(",")
+                .map((i) => i.trim())
+                .filter((i) => i.length > 0),
+            };
+
+            const res = await updateUser(userId, updates);
+
+            // Unwrap response safely
+            const data = res?.data || res;        // Axios response or plain data
+            const updatedUser = data.user || data; // { user: {...} } OR plain user
+
+            // Update React state so UI changes instantly
+            setUserState(updatedUser);
+
+            // Sync localStorage
+            const stored = safeParseJWT(localStorage.getItem("jwt")) || {};
+            stored.token = stored.token || token;
+            stored.user = updatedUser;
+            localStorage.setItem("jwt", JSON.stringify(stored));
+
+            alert("Profile updated!");
+            closeEditModal();
+        } catch (err) {
+            console.error(err);
+            alert("Failed to update profile.");
+        }
+    };
+
+
+
+
+  /* ======================================================
+          PROFILE PHOTO UPLOAD (INSTANT)
+  ====================================================== */
   const handleImageClick = () => fileInputRef.current.click();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     setPreview(URL.createObjectURL(file));
     setSelectedFile(file);
   };
@@ -125,11 +194,11 @@ function ProfilePage() {
       const result = await uploadProfilePhoto(userId, selectedFile);
 
       if (result.success && result.user) {
-        const updated = { ...user, profile_picture: result.user.profile_picture };
-        setUser(updated);
+        const updatedUser = { ...userState, profile_picture: result.user.profile_picture };
+        setUserState(updatedUser);
 
         const savedJwt = safeParseJWT(localStorage.getItem("jwt"));
-        savedJwt.user = updated;
+        savedJwt.user = updatedUser;
         localStorage.setItem("jwt", JSON.stringify(savedJwt));
       }
 
@@ -143,9 +212,8 @@ function ProfilePage() {
   };
 
   /* ======================================================
-          GALLERY UPLOAD
+          GALLERY UPLOAD (INSTANT)
   ====================================================== */
-
   const handleGalleryTileClick = () => galleryInputRef.current.click();
 
   const handleGalleryChange = async (e) => {
@@ -156,13 +224,13 @@ function ProfilePage() {
       const result = await uploadGalleryPhoto(userId, file);
 
       if (result.photos) {
-        const updated = { ...user, photos: result.photos };
-        setUser(updated);
+        const updatedUser = { ...userState, photos: result.photos };
+        setUserState(updatedUser);
         setGallery(result.photos);
 
-        const savedJwt = safeParseJWT(localStorage.getItem("jwt"));
-        savedJwt.user = updated;
-        localStorage.setItem("jwt", JSON.stringify(savedJwt));
+        const stored = safeParseJWT(localStorage.getItem("jwt"));
+        stored.user = updatedUser;
+        localStorage.setItem("jwt", JSON.stringify(stored));
       }
     } catch (err) {
       console.error(err);
@@ -171,8 +239,25 @@ function ProfilePage() {
   };
 
   /* ======================================================
-          RENDER
+          NO USER CHECK
   ====================================================== */
+  if (!userState) {
+    return (
+      <>
+        <Navbar />
+        <div style={{ padding: "100px", textAlign: "center" }}>
+          <h2>You are not logged in.</h2>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  /* ======================================================
+          RENDER UI (ALL USING userState)
+  ====================================================== */
+
+  const user = userState; // cleaner alias
 
   return (
     <>
@@ -184,6 +269,7 @@ function ProfilePage() {
           {/* LEFT COLUMN */}
           <div className="profile-left-column">
 
+            {/* PROFILE IMAGE */}
             <div className="profile-image-wrapper" onClick={handleImageClick}>
               <img
                 src={
@@ -206,6 +292,7 @@ function ProfilePage() {
               />
             </div>
 
+            {/* UNIVERSITY */}
             <div className="sidebar-info">
               <p className="sidebar-title">University</p>
               <p>{user.university || "N/A"}</p>
@@ -220,17 +307,18 @@ function ProfilePage() {
 
           {/* RIGHT COLUMN */}
           <div className="profile-right-column">
-
             <div className="profile-header-top">
               <h1 className="profile-name">
                 {user.first_name} {user.last_name}
               </h1>
-              <button className="edit-profile-btn">Edit Profile</button>
+
+              <button className="edit-profile-btn" onClick={openEditModal}>
+                Edit Profile
+              </button>
             </div>
 
             <p className="profile-subtitle">{user.program || "Student"}</p>
 
-            {/* INTERESTS */}
             <h3 className="section-title">Interests</h3>
             <div className="interests-list">
               {user.interests?.map((interest, index) => (
@@ -240,11 +328,9 @@ function ProfilePage() {
               ))}
             </div>
 
-            {/* BIO */}
             <h3 className="section-title">Personal Biography</h3>
             <p>{user.bio || "No biography yet."}</p>
 
-            {/* ALBUMS */}
             <h3 className="section-title">Albums</h3>
             <div className="album-grid">
               {gallery.map((photo, index) => (
@@ -285,6 +371,83 @@ function ProfilePage() {
             alt="Full"
             onClick={(e) => e.stopPropagation()}
           />
+        </div>
+      )}
+
+      {/* EDIT PROFILE MODAL */}
+      {isEditing && (
+        <div className="modal-overlay" onClick={closeEditModal}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Profile</h2>
+
+            <div className="modal-field">
+              <label>First Name</label>
+              <input
+                type="text"
+                name="first_name"
+                value={editForm.first_name}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Last Name</label>
+              <input
+                type="text"
+                name="last_name"
+                value={editForm.last_name}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>University</label>
+              <input
+                type="text"
+                name="university"
+                value={editForm.university}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Program</label>
+              <input
+                type="text"
+                name="program"
+                value={editForm.program}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Biography</label>
+              <textarea
+                name="bio"
+                value={editForm.bio}
+                onChange={handleEditChange}
+              ></textarea>
+            </div>
+
+            <div className="modal-field">
+              <label>Interests (comma separated)</label>
+              <input
+                type="text"
+                name="interests"
+                value={editForm.interests}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="modal-buttons">
+              <button className="save-btn" onClick={saveProfileChanges}>
+                Save Changes
+              </button>
+              <button className="cancel-btn" onClick={closeEditModal}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

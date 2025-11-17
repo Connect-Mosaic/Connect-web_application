@@ -56,36 +56,60 @@ const read = (req, res) => {
 const update = async (req, res) => {
   try {
     console.log('[User] update called for user id:', req.profile._id);
-    const allowed = ['first_name', 'last_name', 'email', 'password', 'interests', 'university', 'role', 'program', 'profile_picture', 'bio', 'location']; //wait for more fields
+
+    const allowed = [
+      'first_name', 'last_name', 'email', 'password',
+      'interests', 'university', 'role', 'program',
+      'profile_picture', 'bio', 'location'
+    ];
+    
     const updates = Object.keys(req.body);
     const isValid = updates.every((key) => allowed.includes(key));
-    if (!isValid) {
+
+    if (!isValid)
       return res.json(errorResponse('Invalid update fields'));
-    }
 
     if (req.body.email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(req.body.email)) {
+      if (!emailRegex.test(req.body.email))
         return res.json(errorResponse('Invalid email address'));
-      }
     }
 
-    if (req.body.password && req.body.password.length < 6) {
+    if (req.body.password && req.body.password.length < 6)
       return res.json(errorResponse('Password must be at least 6 characters'));
-    }
 
     let user = req.profile;
+
     updates.forEach((key) => (user[key] = req.body[key]));
     user.updated = Date.now();
     await user.save();
 
+    // Hide sensitive fields
     user.hashed_password = undefined;
     user.salt = undefined;
-    res.json(successResponse('User updated successfully', user));
+
+    return res.json({
+      success: true,
+      user: {
+        id: user._id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        university: user.university,
+        program: user.program,
+        interests: user.interests,
+        bio: user.bio,
+        profile_picture: user.profile_picture,
+        photos: user.photos,
+        role: user.role,
+      }
+    });
+
   } catch (err) {
     return res.json(errorResponse(errorHandler.getErrorMessage(err)));
   }
 };
+
 
 /* --------------------------
    REMOVE USER

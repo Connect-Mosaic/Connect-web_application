@@ -16,8 +16,8 @@ export const createUser = async (user) => {
   return await api.post("/api/user/", user);
 };
 
-// UPDATE USER
-export const UPDATEUser = async (id, updates) => {
+// UPDATE USER  ✅ corrected name
+export const updateUser = async (id, updates) => {
   return await api.put(`/api/user/${id}`, updates);
 };
 
@@ -41,4 +41,3 @@ export const uploadGalleryPhoto = async (userId, file) => {
 
   return await api.formPost(`/api/user/${userId}/upload-gallery`, formData);
 };
-
