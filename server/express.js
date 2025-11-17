@@ -30,8 +30,8 @@ app.use(express.static(path.join(CURRENT_WORKING_DIR, "dist/app")));
 // Routes — CORS already applied above
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(compress());
 app.use(helmet());
