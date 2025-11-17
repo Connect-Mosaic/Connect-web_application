@@ -4,14 +4,11 @@ import authCtrl from "../controllers/auth.controller.js";
 import upload from "../middleware/upload.js";
 
 const router = express.Router();
+router.post("/", userCtrl.create);
+router.get("/", userCtrl.list);
 
-// CREATE + LIST
-router.route("/api/users")
-  .post(userCtrl.create)
-  .get(userCtrl.list);
-
-// READ / UPDATE / DELETE (with auth)
-router.route("/api/users/:userId")
+router
+  .route("/:userId")
   .get(authCtrl.requireSignin, userCtrl.read)
   .put(authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.update)
   .delete(authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.remove);
