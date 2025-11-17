@@ -50,7 +50,7 @@ const login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        profile_picture_url: user.profile_picture_url
+        profile_picture: user.profile_picture
       },
     }));
   } catch (err) {
@@ -80,7 +80,7 @@ const hasAuthorization = (req, res, next) => {
 };
 
 const register = async (req, res) => {
-  const { first_name, last_name, email, password, university, program, interests, location, profile_picture_url } = req.body;
+  const { first_name, last_name, email, password, university, program, interests, location, profile_picture } = req.body;
   console.log('[Auth] register called', {
     first_name,
     last_name,
@@ -89,7 +89,7 @@ const register = async (req, res) => {
     program,
     interests,
     location,
-    profile_picture_url
+    profile_picture
   }); // Do NOT log passwords
 
   try {
@@ -112,7 +112,7 @@ const register = async (req, res) => {
       program,
       interests,
       location,
-      profile_picture_url
+      profile_picture
     });
 
     console.log('[Auth] Saving new user to DB for email:', email);
@@ -142,7 +142,7 @@ const register = async (req, res) => {
         program: user.program,
         interests: user.interests,
         location: user.location,
-        profile_picture_url: user.profile_picture_url
+        profile_picture: user.profile_picture
       }
     }));
     // return res.json("User registered successfully");

@@ -99,7 +99,7 @@ router.get("/", userCtrl.list);
  *               program:
  *                 type: string
  *                 example: Software Engineering
- *               profile_picture_url:
+ *               profile_picture:
  *                 type: string
  *                 format: uri
  *                 example: https://example.com/avatar.jpg
@@ -136,7 +136,7 @@ router.get("/", userCtrl.list);
  *                 bio: "I love building full-stack apps and exploring AI features."
  *                 first_name: "Albert Liu"
  *                 last_name: "Liu test"
- *                 profile_picture_url: "https://example.com/avatar.jpg"
+ *                 profile_picture: "https://example.com/avatar.jpg"
  *       400:
  *         description: Bad request - validation failed
  *       401:
