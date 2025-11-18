@@ -1,0 +1,71 @@
+/* ===============================
+   Footer Styling (Blue Background)
+   =============================== */
+
+.footer {
+  width: 100%;
+  background-color: #d3e4ff; /* light blue */
+  padding: 2rem 4rem;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Left: Connect button */
+.footer-connect-btn {
+  padding: 0.7rem 2rem;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 30px;     /* round like search bar */
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.footer-connect-btn:hover {
+  background-color: #f0f0f0;
+}
+
+/* Center: nav text */
+.footer-center {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.footer-link {
+  font-weight: 600;
+  color: #222;
+  cursor: default;
+  user-select: none;
+}
+
+.footer-link.clickable {
+  cursor: pointer;
+}
+
+.footer-link.clickable:hover {
+  text-decoration: underline;
+}
+
+/* Right: Social icons */
+.footer-right {
+  display: flex;
+  gap: 1.2rem;
+}
+
+.social-icon {
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .footer {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem 1rem;
+  }
+}

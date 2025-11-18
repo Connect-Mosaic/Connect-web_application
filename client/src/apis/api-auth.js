@@ -1,15 +1,16 @@
 import { api } from './client';
 import auth from './auth-helper';
 
-// User body example:{
-//   "name": "tetUser",
+// register user body example:{
+//   "first_name": "tetUser",
+//   "last_name": "example",
 //   "email": "tetUser@example.com",
 //   "password": "mypassword123",
 //   "role": "student",
 //   "interests": ["AI", "Web Development", "Cooking"],
 //   "university": "Centennial College",
 //   "program": "Software Engineering",
-//   "profilePicture": "https://example.com/avatar.jpg",
+//   "profile_picture": "https://example.com/avatar.jpg",
 //   "bio": "I love building full-stack apps and exploring AI features.",
 //   "location": "Toronto, Canada"
 // }
@@ -21,6 +22,15 @@ export const register = async (user) => {
   }
   return res;
 }
+//
+// Login body example:
+// {
+//     "user":{
+//      "email": "albert4@example.com",
+//      "password":"mypassword123"
+//     },
+//     "rememberMe":"true"
+// }
 export const login = async (user, rememberMe) => {
   const res = await api.post('/api/auth/login/', { user, rememberMe });
   if (res.success && res.token) {

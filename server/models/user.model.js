@@ -29,7 +29,14 @@ const UserSchema = new mongoose.Schema({
   interests: [String],
   university: String,
   program: String,
-  profile_picture: String,
+  profile_picture: {
+  type: String,
+  default: "/uploads/profile/default.png",  // default placeholder
+  },
+    photos: {
+    type: [String],
+    default: []
+  },
   bio: String,
   location: String,
   salt: String,

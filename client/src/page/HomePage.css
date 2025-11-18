@@ -64,4 +64,83 @@
   .homepage-placeholder {
     display: none;
   }
+
+
+  /* Extra small devices */
+@media (max-width: 480px) {
+  .homepage-title {
+    font-size: 2.2rem;
+  }
+
+  .homepage-subtitle {
+    font-size: 1rem;
+  }
+
+  .homepage {
+    padding: 2rem 1rem;
+  }
+
+  .homepage-image {
+    width: 90%;
+  }
+
+  .homepage-image img {
+    max-width: 280px;
+  }
+}
+
+
+/* Large tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .homepage-title {
+    font-size: 2.5rem;
+  }
+
+  .homepage-subtitle {
+    font-size: 1.05rem;
+  }
+
+  .homepage-image img {
+    max-width: 400px;
+  }
+}
+
+/* Small laptops */
+@media (min-width: 1025px) and (max-width: 1366px) {
+  .homepage {
+    padding: 0 5%;
+  }
+
+  .homepage-title {
+    font-size: 2.8rem;
+  }
+}
+
+/* Large desktops (wide monitors) */
+@media (min-width: 1600px) {
+  .homepage {
+    padding: 0 15%;
+  }
+
+  .homepage-image img {
+    max-width: 500px;
+  }
+}
+
+/* Cross-browser fixes */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img {
+  display: block;
+}
+
+button, .btn {
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+
 }
