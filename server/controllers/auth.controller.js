@@ -92,7 +92,7 @@ const hasAuthorization = (req, res, next) => {
 };
 
 const register = async (req, res) => {
-  const { first_name, last_name, email, password, university, program, interests, bio, location, profile_picture_url } = req.body;
+  const { first_name, last_name, email, password, university, program, interests, bio, location, profile_picture } = req.body;
   console.log('[Auth] register called', {
     first_name,
     last_name,
