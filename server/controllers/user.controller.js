@@ -62,7 +62,7 @@ const update = async (req, res) => {
       'interests', 'university', 'role', 'program',
       'profile_picture', 'bio', 'location'
     ];
-    
+
     const updates = Object.keys(req.body);
     const isValid = updates.every((key) => allowed.includes(key));
 
