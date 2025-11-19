@@ -7,11 +7,11 @@ export const getEvents = async() => {
 
 //GET SINGLE EVENT
 export const getEvent = async(id) => {
-    return await api.get(`./api/events/${id}`);
+    return await api.get(`/api/events/${id}`);
 };
 
 //CREATE EVENT
-export const creatEvent = async(id,event) => {
+export const createEvent = async(event) => {
     return await api.post('/api/events', event);
 };
 
@@ -22,6 +22,6 @@ export const updateEvent = async(id,updates) => {
 
 //DELETE EVENT
 export const deleteEvent = async(id) => {
-    return await api.delete(`/api/event/${id}`);
+    return await api.delete(`/api/events/${id}`);
 };
 
