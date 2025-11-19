@@ -49,9 +49,28 @@ const banUser = async (req, res) => {
     }
 };
 
+const dashboard = async (req, res) => {
+    try {
+        console.log('[Admin] dashboard data called by admin user id:', req.auth.userId);
+        // total users
+        // Active users today
+        // new signups this week
+        // new signups this month
+
+        res.json(successResponse('Dashboard data retrieved successfully', {
+            total_users: 1200,
+            active_users_today: 150,
+            new_signups_this_week: 75,
+            new_signups_this_month: 300
+        }));
+    } catch (err) {
+        return res.json(errorResponse(errorHandler.getErrorMessage(err)));
+    }
+};
 
 export default {
     userList,
     deleteUser,
-    banUser
+    banUser,
+    dashboard
 };

@@ -1,6 +1,6 @@
 import express from "express";
-import adminController from "../controllers/admin.controller.js";
 import authCtrl from "../controllers/auth.controller.js";
+import adminController from "../controllers/admin.controller.js";
 
 
 const router = express.Router();
@@ -126,4 +126,35 @@ router.delete("/users/:userId", authCtrl.requireSignin, authCtrl.requireAdminAcc
  *                 status: "banned"
  */
 router.delete("/users/:userId/ban", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.banUser);
+
+
+/**
+ * @swagger
+ * /api/admin/dashboard:
+ *   get:
+ *     summary: Get dashboard metrics
+ *     tags:
+ *       - Admin
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Dashboard data retrieved successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Dashboard data retrieved successfully"
+ *               data:
+ *                 total_users: 1200
+ *                 active_users_today: 150
+ *                 new_signups_this_week: 75
+ *                 new_signups_this_month: 300
+ *       '401':
+ *         description: Unauthorized
+ *       '403':
+ *         description: Forbidden
+ */
+router.get("/dashboard", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.dashboard);
+
 export default router;
