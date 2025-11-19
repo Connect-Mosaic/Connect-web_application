@@ -77,19 +77,6 @@ const logout = (req, res) => {
     message: "Logout successful",
   }));
 };
-const requireSignin = expressjwt({
-  secret: config.jwtSecret,
-  algorithms: ["HS256"],
-  userProperty: "auth",
-});
-
-const hasAuthorization = (req, res, next) => {
-  const authorized = req.profile && req.auth && req.profile._id == req.auth.userId;
-  if (!authorized) {
-    return res.json(errorResponse('User is not authorized to perform this action'));
-  }
-  next();
-};
 
 const register = async (req, res) => {
   const { first_name, last_name, email, password, university, program, interests, bio, location, profile_picture } = req.body;
@@ -173,4 +160,26 @@ const register = async (req, res) => {
   }
 };
 
-export default { login, logout, requireSignin, hasAuthorization, register };
+const requireSignin = expressjwt({
+  secret: config.jwtSecret,
+  algorithms: ["HS256"],
+  userProperty: "auth",
+});
+
+const hasAuthorization = (req, res, next) => {
+  const authorized = req.profile && req.auth && req.profile._id == req.auth.userId;
+  if (!authorized) {
+    return res.json(errorResponse('User is not authorized to perform this action'));
+  }
+  next();
+};
+
+const requireAdminAccess = (req, res, next) => {
+  if (req.auth && req.auth.role === "admin") {
+    next();
+  } else {
+    return res.json(errorResponse('User is not authorized to perform this action'));
+  }
+};
+
+export default { login, logout, requireSignin, hasAuthorization, requireAdminAccess, register };

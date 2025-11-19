@@ -6,6 +6,7 @@ import helmet from "helmet";
 import path from "path";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use(express.static(path.join(CURRENT_WORKING_DIR, "dist/app")));
 // Routes — CORS already applied above
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/admin", adminRoutes);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
