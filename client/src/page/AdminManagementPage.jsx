@@ -6,19 +6,23 @@ import Footer from "../components/Footer";
 
 function AdminManagement() {
   return (
-    <div className="admin-page-container">
+    <>
+      {/* Global Top Navbar */}
       <Navbar />
+
+      {/* Admin Management Body */}
+      <div className="admin-page-container">
 
         {/* Page Header */}
         <div className="user-management-header">
-            <h2>User Management</h2>
+          <h2>User Management</h2>
         </div>
 
         {/* Table Container */}
         <div className="user-table-container">
-            <table className="user-table">
+          <table className="user-table">
             <thead>
-                <tr>
+              <tr>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
@@ -26,32 +30,35 @@ function AdminManagement() {
                 <th>Joined Events</th>
                 <th>Status</th>
                 <th>Actions</th>
-                </tr>
+              </tr>
             </thead>
 
-            {/* Empty state: table with no user rows yet */}
+            {/* Empty State */}
             <tbody className="user-table-body">
-                {/* Later, map rows here from DB. For now, render an empty row to show structure */}
-                <tr className="empty-row">
+              <tr className="empty-row">
                 <td colSpan="7" className="empty-message">
-                    No users found.
+                  No users found.
                 </td>
-                </tr>
+              </tr>
             </tbody>
-            </table>
+          </table>
         </div>
 
-        {/* Pagination Container */}
+        {/* Pagination */}
         <div className="pagination-container">
-            <button className="pagination-btn prev-btn" disabled>
+          <button className="pagination-btn prev-btn" disabled>
             prev
-            </button>
-            <button className="pagination-btn next-btn" disabled>
+          </button>
+          <button className="pagination-btn next-btn" disabled>
             next
-            </button>
+          </button>
         </div>
-        <Footer />
-    </div>
+
+      </div>
+
+      {/* Global Footer */}
+      <Footer />
+    </>
   );
 }
 
