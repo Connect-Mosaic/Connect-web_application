@@ -24,4 +24,3 @@ export const updateEvent = async(id,updates) => {
 export const deleteEvent = async(id) => {
     return await api.delete(`/api/events/${id}`);
 };
-

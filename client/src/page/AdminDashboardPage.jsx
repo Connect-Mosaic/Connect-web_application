@@ -4,7 +4,7 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-function AdminDashboard() {
+function AdminDashboardPage() {
   return (
     <>
       {/* Global Navbar */}
@@ -56,4 +56,4 @@ function AdminDashboard() {
   );
 }
 
-export default AdminDashboard;
+export default AdminDashboardPage;

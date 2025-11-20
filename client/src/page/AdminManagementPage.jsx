@@ -1,59 +1,53 @@
-// src/pages/AdminManagementPage.jsx
+// src/pages/AdminDashboard.jsx
 
 import React from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-function AdminManagement() {
+function AdminDashboard() {
   return (
     <>
-      {/* Global Top Navbar */}
+      {/* Global Navbar */}
       <Navbar />
 
-      {/* Admin Management Body */}
-      <div className="admin-page-container">
+      {/* Dashboard Body Container */}
+      <div className="admin-dashboard-page">
 
-        {/* Page Header */}
-        <div className="user-management-header">
-          <h2>User Management</h2>
+        {/* Dashboard Header */}
+        <div className="admin-dashboard-header">
+          <h2>Admin Dashboard</h2>
         </div>
 
-        {/* Table Container */}
-        <div className="user-table-container">
-          <table className="user-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Location</th>
-                <th>Joined Events</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+        {/* Stats Section */}
+        <div className="dashboard-stats-container">
 
-            {/* Empty State */}
-            <tbody className="user-table-body">
-              <tr className="empty-row">
-                <td colSpan="7" className="empty-message">
-                  No users found.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {/* Row 1 */}
+          <div className="dashboard-row">
+            <div className="dashboard-stat-box">
+              <p className="stat-title">Total Users</p>
+              <p className="stat-value">0</p>
+            </div>
+
+            <div className="dashboard-stat-box">
+              <p className="stat-title">Active Users Today</p>
+              <p className="stat-value">0</p>
+            </div>
+          </div>
+
+          {/* Row 2 */}
+          <div className="dashboard-row">
+            <div className="dashboard-stat-box">
+              <p className="stat-title">New Signups this week</p>
+              <p className="stat-value">0</p>
+            </div>
+
+            <div className="dashboard-stat-box">
+              <p className="stat-title">New Signups this month</p>
+              <p className="stat-value">0</p>
+            </div>
+          </div>
+
         </div>
-
-        {/* Pagination */}
-        <div className="pagination-container">
-          <button className="pagination-btn prev-btn" disabled>
-            prev
-          </button>
-          <button className="pagination-btn next-btn" disabled>
-            next
-          </button>
-        </div>
-
       </div>
 
       {/* Global Footer */}
@@ -62,4 +56,4 @@ function AdminManagement() {
   );
 }
 
-export default AdminManagement;
+export default AdminDashboard;

@@ -129,3 +129,41 @@
   transform: translateY(-1px);
 }
 }
+
+/* Admin Link Styling */
+.admin-link {
+  color: #dc3545 !important;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-link:hover {
+  color: #c82333 !important;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.admin-link.active {
+  background-color: rgba(220, 53, 69, 0.15);
+  border-radius: 6px;
+}
+
+.admin-link i {
+  font-size: 1.1em;
+}
+
+.admin-text {
+  margin-left: 2px;
+}
+
+/* Hide text on smaller screens, show only icon */
+@media (max-width: 768px) {
+  .admin-text {
+    display: none;
+  }
+  
+  .admin-link i {
+    font-size: 1.2em;
+  }
+}
