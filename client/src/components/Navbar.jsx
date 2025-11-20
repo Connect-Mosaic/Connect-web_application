@@ -3,16 +3,15 @@ import { NavLink } from "react-router-dom";
 import "./Navbar.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-function Navbar() {
+function Navbar({ isLoggedIn, onLogout }) {
   return (
     <nav className="navbar">
-      
       {/* Left: Logo */}
       <div className="navbar-brand">
         <h2>Mosaic Connect</h2>
       </div>
 
-       {/*search bar*/}
+      {/* Search Bar */}
       <div className="navbar-search">
         <input 
           type="text" 
@@ -33,6 +32,15 @@ function Navbar() {
         <button className="settings-btn">
           <i className="bi bi-gear"></i>
         </button>
+
+        {/* Login / Logout — same style as nav links */}
+        {!isLoggedIn ? (
+          <NavLink to="/login" className="nav-link">Login</NavLink>
+        ) : (
+          <button className="nav-link logout-link" onClick={onLogout}>
+            Logout
+          </button>
+        )}
       </div>
     </nav>
   );

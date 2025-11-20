@@ -1,14 +1,19 @@
 import React, { useRef, useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { uploadProfilePhoto, uploadGalleryPhoto, getUser } from "../apis/user";
+import {
+  uploadProfilePhoto,
+  uploadGalleryPhoto,
+  getUser,
+  updateUser,
+} from "../apis/user";
 import "./ProfilePage.css";
 import placeholderProfile from "../image/placeholder-profile.jpg";
+import { useNavigate } from "react-router-dom";
 
 /* ======================================================
-      SAFE PARSER FOR JWT IN LOCALSTORAGE
+      SAFE JWT PARSING FOR LOCALSTORAGE
 ====================================================== */
-
 function safeParseJWT(raw) {
   if (!raw) return null;
 
@@ -25,94 +30,63 @@ function safeParseJWT(raw) {
 function ProfilePage() {
   const fileInputRef = useRef(null);
   const galleryInputRef = useRef(null);
+  const navigate = useNavigate();
 
   /* ======================================================
-          LOAD JWT SAFELY
+          LOAD JWT + INITIAL USER
   ====================================================== */
-
-  const jwt = safeParseJWT(localStorage.getItem("jwt"));
+  const jwt = safeParseJWT(localStorage.getItem("jwt") ?? "{}");
   const token = jwt?.token || null;
 
-  const [user, setUser] = useState(jwt?.user || null);
-  const userId = user?._id || user?.id;
+  // React state for user
+  const [userState, setUserState] = useState(jwt?.user || null);
+  const userId = userState?._id || userState?.id;
 
   /* ======================================================
-          RE-FETCH USER ON PAGE LOAD
+      REFETCH USER FROM DATABASE
   ====================================================== */
+  async function fetchUserFromDB() {
+    if (!token || !userId) return;
 
-  useEffect(() => {
-    async function fetchUserFromDB() {
-      if (!token || !userId) return;
+    try {
+      const res = await getUser(userId);
+      const data = res?.data || res;
+      const freshUser = data.user || data;
 
-      try {
-        const freshUser = await getUser(userId, token);
+      const stored = safeParseJWT(localStorage.getItem("jwt")) || {};
+      stored.token = stored.token || token;
+      stored.user = freshUser;
+      localStorage.setItem("jwt", JSON.stringify(stored));
 
-        setUser(freshUser);
-
-        const stored = safeParseJWT(localStorage.getItem("jwt"));
-        stored.user = freshUser;
-        localStorage.setItem("jwt", JSON.stringify(stored));
-      } catch (err) {
-        console.log("Error fetching fresh user:", err);
-      }
+      setUserState(freshUser);
+    } catch (err) {
+      console.log("Error fetching user:", err);
     }
-
-    fetchUserFromDB();
-  }, [token, userId]);
-
-  /* ======================================================
-          STATE
-  ====================================================== */
-
-  const [preview, setPreview] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [gallery, setGallery] = useState(user?.photos || []);
-
-  /* ======================================================
-          EDIT PROFILE MODAL STATE
-  ====================================================== */
-
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState({
-    first_name: user?.first_name || "",
-    last_name: user?.last_name || "",
-    email: user?.email || "",
-    university: user?.university || "",
-    program: user?.program || "",
-    bio: user?.bio || "",
-    interests: user?.interests?.join(", ") || ""
-  });
-
-  /* Sync gallery with user data */
-  useEffect(() => {
-    if (user?.photos) setGallery(user.photos);
-  }, [user]);
-
-  if (!user) {
-    return (
-      <>
-        <Navbar />
-        <div style={{ padding: "100px", textAlign: "center" }}>
-          <h2>You are not logged in.</h2>
-        </div>
-        <Footer />
-      </>
-    );
   }
 
+  // Fetch user on load
+  useEffect(() => {
+    fetchUserFromDB();
+    // eslint-disable-next-line
+  }, []);
+
   /* ======================================================
-          FULLSCREEN IMAGE POPUP
+          PROFILE + GALLERY STATE
   ====================================================== */
+  const [preview, setPreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [gallery, setGallery] = useState(userState?.photos || []);
 
+  useEffect(() => {
+    if (userState?.photos) setGallery(userState.photos);
+  }, [userState]);
+
+  /* ======================================================
+          FULLSCREEN POPUP
+  ====================================================== */
   const [fullscreenImage, setFullscreenImage] = useState(null);
-
-  const openImage = (src) => {
-    setFullscreenImage(src);
-  };
-
-  const closeImage = () => {
-    setFullscreenImage(null);
-  };
+  const openImage = (src) => setFullscreenImage(src);
+  const closeImage = () => setFullscreenImage(null);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -123,14 +97,78 @@ function ProfilePage() {
   }, []);
 
   /* ======================================================
-          PROFILE IMAGE UPLOAD
+          EDIT PROFILE MODAL
   ====================================================== */
+  const [isEditing, setIsEditing] = useState(false);
 
+  const [editForm, setEditForm] = useState({
+    first_name: userState?.first_name || "",
+    last_name: userState?.last_name || "",
+    university: userState?.university || "",
+    program: userState?.program || "",
+    bio: userState?.bio || "",
+    interests: userState?.interests ? userState.interests.join(", ") : "",
+  });
+
+  const openEditModal = () => {
+    setEditForm({
+      first_name: userState?.first_name || "",
+      last_name: userState?.last_name || "",
+      university: userState?.university || "",
+      program: userState?.program || "",
+      bio: userState?.bio || "",
+      interests: userState?.interests ? userState.interests.join(", ") : "",
+    });
+    setIsEditing(true);
+  };
+
+  const closeEditModal = () => setIsEditing(false);
+
+  const handleEditChange = (e) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  /* ======================================================
+      SAVE PROFILE (INSTANT UI UPDATE)
+  ====================================================== */
+  const saveProfileChanges = async () => {
+    try {
+      const updates = {
+        ...editForm,
+        interests: editForm.interests
+          .split(",")
+          .map((i) => i.trim())
+          .filter((i) => i.length > 0),
+      };
+
+      const res = await updateUser(userId, updates);
+      const data = res?.data || res;
+      const updatedUser = data.user || data;
+
+      setUserState(updatedUser);
+
+      const stored = safeParseJWT(localStorage.getItem("jwt")) || {};
+      stored.token = stored.token || token;
+      stored.user = updatedUser;
+      localStorage.setItem("jwt", JSON.stringify(stored));
+
+      alert("Profile updated!");
+      closeEditModal();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update profile.");
+    }
+  };
+
+  /* ======================================================
+          PROFILE PHOTO UPLOAD
+  ====================================================== */
   const handleImageClick = () => fileInputRef.current.click();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     setPreview(URL.createObjectURL(file));
     setSelectedFile(file);
   };
@@ -140,11 +178,15 @@ function ProfilePage() {
       const result = await uploadProfilePhoto(userId, selectedFile);
 
       if (result.success && result.user) {
-        const updated = { ...user, profile_picture: result.user.profile_picture };
-        setUser(updated);
+        const updatedUser = {
+          ...userState,
+          profile_picture: result.user.profile_picture,
+        };
+
+        setUserState(updatedUser);
 
         const savedJwt = safeParseJWT(localStorage.getItem("jwt"));
-        savedJwt.user = updated;
+        savedJwt.user = updatedUser;
         localStorage.setItem("jwt", JSON.stringify(savedJwt));
       }
 
@@ -160,7 +202,6 @@ function ProfilePage() {
   /* ======================================================
           GALLERY UPLOAD
   ====================================================== */
-
   const handleGalleryTileClick = () => galleryInputRef.current.click();
 
   const handleGalleryChange = async (e) => {
@@ -171,13 +212,13 @@ function ProfilePage() {
       const result = await uploadGalleryPhoto(userId, file);
 
       if (result.photos) {
-        const updated = { ...user, photos: result.photos };
-        setUser(updated);
+        const updated = { ...userState, photos: result.photos };
+        setUserState(updated);
         setGallery(result.photos);
 
-        const savedJwt = safeParseJWT(localStorage.getItem("jwt"));
-        savedJwt.user = updated;
-        localStorage.setItem("jwt", JSON.stringify(savedJwt));
+        const stored = safeParseJWT(localStorage.getItem("jwt"));
+        stored.user = updated;
+        localStorage.setItem("jwt", JSON.stringify(stored));
       }
     } catch (err) {
       console.error(err);
@@ -186,170 +227,25 @@ function ProfilePage() {
   };
 
   /* ======================================================
-          EDIT PROFILE MODAL COMPONENT
+          NOT LOGGED IN → SHOW MESSAGE + RETURN NULL
   ====================================================== */
-
-  const EditProfileModal = () => {
-    const handleInputChange = (e) => {
-      const { name, value } = e.target;
-      setEditFormData({
-        ...editFormData,
-        [name]: value
-      });
-    };
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      
-      try {
-        // Prepare data for API call
-        const updateData = {
-          ...editFormData,
-          interests: editFormData.interests.split(",").map(interest => interest.trim()).filter(interest => interest)
-        };
-
-        // Call your update user API
-        const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify(updateData)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          // Update local state
-          const updatedUser = { ...user, ...updateData };
-          setUser(updatedUser);
-
-          // Update localStorage
-          const savedJwt = safeParseJWT(localStorage.getItem("jwt"));
-          savedJwt.user = updatedUser;
-          localStorage.setItem("jwt", JSON.stringify(savedJwt));
-
-          // Close modal
-          setIsEditModalOpen(false);
-          alert("Profile updated successfully!");
-        } else {
-          alert("Failed to update profile: " + (result.message || "Unknown error"));
-        }
-      } catch (error) {
-        console.error("Update profile error:", error);
-        alert("Error updating profile. Please try again.");
-      }
-    };
-
-    if (!isEditModalOpen) return null;
-
+  if (!userState) {
     return (
-      <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
-        <div className="modal-content profile-edit-modal" onClick={(e) => e.stopPropagation()}>
-          <button className="close-button" onClick={() => setIsEditModalOpen(false)}>×</button>
-          
-          <h2>Edit Profile</h2>
-          
-          <form onSubmit={handleSubmit}>
-            <div className="form-row">
-              <div className="form-group">
-                <label>First Name</label>
-                <input
-                  type="text"
-                  name="first_name"
-                  value={editFormData.first_name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Last Name</label>
-                <input
-                  type="text"
-                  name="last_name"
-                  value={editFormData.last_name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Email</label>
-              <input
-                type="email"
-                name="email"
-                value={editFormData.email}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>University</label>
-              <input
-                type="text"
-                name="university"
-                value={editFormData.university}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Program</label>
-              <input
-                type="text"
-                name="program"
-                value={editFormData.program}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Interests (comma separated)</label>
-              <input
-                type="text"
-                name="interests"
-                value={editFormData.interests}
-                onChange={handleInputChange}
-                placeholder="e.g., coding, basketball, music"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Bio</label>
-              <textarea
-                name="bio"
-                value={editFormData.bio}
-                onChange={handleInputChange}
-                rows="4"
-                placeholder="Tell us about yourself..."
-              />
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" className="cancel-btn" onClick={() => setIsEditModalOpen(false)}>
-                Cancel
-              </button>
-              <button type="submit" className="save-btn">
-                Save Changes
-              </button>
-            </div>
-          </form>
+      <>
+        <div style={{ padding: "100px", textAlign: "center" }}>
+          <h2>You are not logged in.</h2>
         </div>
-      </div>
+      </>
     );
-  };
+  }
+
+  const user = userState;
 
   /* ======================================================
-          RENDER
+          RENDER UI
   ====================================================== */
-
   return (
     <>
-      <Navbar />
 
       <div className="profile-wrapper">
         <div className="profile-card">
@@ -357,6 +253,7 @@ function ProfilePage() {
           {/* LEFT COLUMN */}
           <div className="profile-left-column">
 
+            {/* PROFILE IMAGE */}
             <div className="profile-image-wrapper" onClick={handleImageClick}>
               <img
                 src={
@@ -379,6 +276,7 @@ function ProfilePage() {
               />
             </div>
 
+            {/* UNIVERSITY */}
             <div className="sidebar-info">
               <p className="sidebar-title">University</p>
               <p>{user.university || "N/A"}</p>
@@ -393,27 +291,12 @@ function ProfilePage() {
 
           {/* RIGHT COLUMN */}
           <div className="profile-right-column">
-
             <div className="profile-header-top">
               <h1 className="profile-name">
                 {user.first_name} {user.last_name}
               </h1>
-              <button 
-                className="edit-profile-btn" 
-                onClick={() => {
-                  // Pre-fill form with current user data
-                  setEditFormData({
-                    first_name: user.first_name || "",
-                    last_name: user.last_name || "",
-                    email: user.email || "",
-                    university: user.university || "",
-                    program: user.program || "",
-                    bio: user.bio || "",
-                    interests: user.interests?.join(", ") || ""
-                  });
-                  setIsEditModalOpen(true);
-                }}
-              >
+
+              <button className="edit-profile-btn" onClick={openEditModal}>
                 Edit Profile
               </button>
             </div>
@@ -443,14 +326,13 @@ function ProfilePage() {
                     src={`http://localhost:3000${photo}`}
                     alt="gallery"
                     className="album-photo"
-                    onClick={() =>
-                      openImage(`http://localhost:3000${photo}`)
-                    }
+                    onClick={() => openImage(`http://localhost:3000${photo}`)}
                     style={{ cursor: "pointer" }}
                   />
                 </div>
               ))}
 
+              {/* ADD PHOTO TILE */}
               <div className="album-tile add-photo" onClick={handleGalleryTileClick}>
                 +
                 <input
@@ -479,9 +361,82 @@ function ProfilePage() {
       )}
 
       {/* EDIT PROFILE MODAL */}
-      <EditProfileModal />
+      {isEditing && (
+        <div className="modal-overlay" onClick={closeEditModal}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Profile</h2>
 
-      <Footer />
+            <div className="modal-field">
+              <label>First Name</label>
+              <input
+                type="text"
+                name="first_name"
+                value={editForm.first_name}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Last Name</label>
+              <input
+                type="text"
+                name="last_name"
+                value={editForm.last_name}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>University</label>
+              <input
+                type="text"
+                name="university"
+                value={editForm.university}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Program</label>
+              <input
+                type="text"
+                name="program"
+                value={editForm.program}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="modal-field">
+              <label>Biography</label>
+              <textarea
+                name="bio"
+                value={editForm.bio}
+                onChange={handleEditChange}
+              ></textarea>
+            </div>
+
+            <div className="modal-field">
+              <label>Interests (comma separated)</label>
+              <input
+                type="text"
+                name="interests"
+                value={editForm.interests}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="modal-buttons">
+              <button className="save-btn" onClick={saveProfileChanges}>
+                Save Changes
+              </button>
+              <button className="cancel-btn" onClick={closeEditModal}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
   );
 }

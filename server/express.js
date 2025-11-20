@@ -4,14 +4,12 @@ import compress from "compression";
 import cors from "cors";
 import helmet from "helmet";
 import path from "path";
+import { swaggerSpec, swaggerUiMiddleware } from "./configs/swagger.js";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
-
-// Allow frontend to access uploaded files
-app.use("/uploads", express.static("uploads"));
-
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -22,19 +20,30 @@ app.use(
 // Allow large form-data uploads (multer needs this BEFORE routes)
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(compress());
+app.use(helmet());
 
 // Serve frontend build (optional)
 const CURRENT_WORKING_DIR = process.cwd();
 app.use(express.static(path.join(CURRENT_WORKING_DIR, "dist/app")));
 
-// Routes — CORS already applied above
+// define routes
+// Allow frontend to access uploaded files
+app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(compress());
-app.use(helmet());
+app.use("/api/admin", adminRoutes);
+
+
+// Your health API
+app.get("/api/health", (req, res) => {
+  res.json({ message: "Welcome to User application. Server healthy." });
+});
+
+// Swagger
+app.use("/api-docs", swaggerUiMiddleware.serve, swaggerUiMiddleware.setup(swaggerSpec));
 
 // Global error handler
 app.use((err, req, res, next) => {
