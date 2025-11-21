@@ -32,6 +32,10 @@ const login = async (req, res) => {
     }
     console.log('[Auth] authentication successful for user id:', user._id);
 
+    // Update last login time
+    user.last_login_at = Math.floor(Date.now() / 1000);
+    await user.save();
+
     // Generate JWT token
     const token = jwt.sign(
       {

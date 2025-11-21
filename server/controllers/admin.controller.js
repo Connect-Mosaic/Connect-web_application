@@ -53,15 +53,29 @@ const dashboard = async (req, res) => {
     try {
         console.log('[Admin] dashboard data called by admin user id:', req.auth.userId);
         // total users
-        // Active users today
+        let totalUsers = await User.countDocuments({ role: { $ne: 'admin' } });
+        // Active users today 
+        let startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        let activeUsersToday = await User.countDocuments({ last_login_at: { $gte: Math.floor(startOfToday.getTime() / 1000) }, role: { $ne: 'admin' } });
+
         // new signups this week
+        let startOfWeek = new Date();
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        let newSignupsThisWeek = await User.countDocuments({ createdAt: { $gte: Math.floor(startOfWeek.getTime() / 1000) }, role: { $ne: 'admin' } });
+
         // new signups this month
+        let startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        let newSignupsThisMonth = await User.countDocuments({ createdAt: { $gte: Math.floor(startOfMonth.getTime() / 1000) }, role: { $ne: 'admin' } });
 
         res.json(successResponse('Dashboard data retrieved successfully', {
-            total_users: 1200,
-            active_users_today: 150,
-            new_signups_this_week: 75,
-            new_signups_this_month: 300
+            total_users: totalUsers,
+            active_users_today: activeUsersToday,
+            new_signups_this_week: newSignupsThisWeek,
+            new_signups_this_month: newSignupsThisMonth
         }));
     } catch (err) {
         return res.json(errorResponse(errorHandler.getErrorMessage(err)));
