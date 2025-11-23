@@ -8,6 +8,7 @@ import { swaggerSpec, swaggerUiMiddleware } from "./configs/swagger.js";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import searchRoutes from "./routes/search.route.js";
 
 const app = express();
 app.use(
@@ -20,7 +21,6 @@ app.use(
 // Allow large form-data uploads (multer needs this BEFORE routes)
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
-app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(compress());
 app.use(helmet());
@@ -32,6 +32,7 @@ app.use(express.static(path.join(CURRENT_WORKING_DIR, "dist/app")));
 // define routes
 // Allow frontend to access uploaded files
 app.use("/uploads", express.static("uploads"));
+app.use("/api/search", searchRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
