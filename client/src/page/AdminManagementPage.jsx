@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import "./AdminManagement.css";
 import AdminDashboard from "../components/AdminDashboard";
+import UserFormModal from "../components/UserFormModal";
 
 function AdminManagementPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
   const token = localStorage.getItem("jwt");
 
@@ -31,11 +34,102 @@ function AdminManagementPage() {
     fetchUsers();
   }, []);
 
+  // Modal handlers
+  const handleAddUser = () => {
+    setEditingUser(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingUser(null);
+  };
+
+  const handleSaveUser = async (userData, userId) => {
+    try {
+      if (userId) {
+        // Update existing user
+        console.log("Updating user:", userId, userData);
+        // TODO: Add your update API call here
+        // await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+        //   method: 'PUT',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     Authorization: `Bearer ${token}`,
+        //   },
+        //   body: JSON.stringify(userData),
+        // });
+      } else {
+        // Create new user
+        console.log("Creating user:", userData);
+        // TODO: Add your create API call here
+        // await fetch('http://localhost:3000/api/admin/users', {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     Authorization: `Bearer ${token}`,
+        //   },
+        //   body: JSON.stringify(userData),
+        // });
+      }
+      
+      // Refresh users list after save
+      await fetchUsers();
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error saving user:", error);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      try {
+        // TODO: Add your delete API call here
+        // await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
+        //   method: 'DELETE',
+        //   headers: { Authorization: `Bearer ${token}` },
+        // });
+        await fetchUsers(); // Refresh list
+      } catch (error) {
+        console.error("Error deleting user:", error);
+      }
+    }
+  };
+
+  const handleBanUser = async (userId) => {
+    if (window.confirm("Are you sure you want to ban this user?")) {
+      try {
+        // TODO: Add your ban API call here
+        // await fetch(`http://localhost:3000/api/admin/users/${userId}/ban`, {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //     Authorization: `Bearer ${token}`,
+        //   },
+        //   body: JSON.stringify({ reason: "Admin action" }),
+        // });
+        await fetchUsers(); // Refresh list
+      } catch (error) {
+        console.error("Error banning user:", error);
+      }
+    }
+  };
+
   return (
     <div className="admin-page-container">
 
-      {/* ─── TITLE ───────────────────────────── */}
-      <h2 className="admin-title">User Management</h2>
+      {/* ─── HEADER WITH ADD BUTTON ───────────── */}
+      <div className="admin-header">
+        <h2 className="admin-title">User Management</h2>
+        <button className="add-user-btn" onClick={handleAddUser}>
+          + Add New User
+        </button>
+      </div>
 
       {/* ─── USER TABLE ───────────────────────── */}
       <div className="admin-table-wrapper">
@@ -66,14 +160,37 @@ function AdminManagementPage() {
                 <tr key={user.id}>
                   <td>{user.name}</td>
                   <td>{user.email}</td>
-                  <td>{user.role}</td>
-                  <td>{user.location}</td>
-                  <td>{user.joined_events.join(", ")}</td>
-                  <td>{user.status}</td>
                   <td>
-                    <button className="action-btn">Edit</button>
-                    <button className="action-btn ban">Ban</button>
-                    <button className="action-btn delete">Delete</button>
+                    <span className={`role-badge ${user.role}`}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td>{user.location}</td>
+                  <td>{user.joined_events?.join(", ") || "None"}</td>
+                  <td>
+                    <span className={`status-badge ${user.status}`}>
+                      {user.status}
+                    </span>
+                  </td>
+                  <td>
+                    <button 
+                      className="action-btn edit"
+                      onClick={() => handleEditUser(user)}
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      className="action-btn ban"
+                      onClick={() => handleBanUser(user.id)}
+                    >
+                      Ban
+                    </button>
+                    <button 
+                      className="action-btn delete"
+                      onClick={() => handleDeleteUser(user.id)}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))
@@ -81,6 +198,14 @@ function AdminManagementPage() {
           </tbody>
         </table>
       </div>
+
+      {/* ─── USER FORM MODAL ─────────────────── */}
+      <UserFormModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        user={editingUser}
+        onSave={handleSaveUser}
+      />
 
       {/* ─── DASHBOARD SECTION BELOW TABLE ────── */}
       <AdminDashboard />
