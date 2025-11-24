@@ -40,12 +40,25 @@ function Navbar({ isLoggedIn, onLogout }) {
         <NavLink to="/map" className="nav-link">Map</NavLink>
         <NavLink to="/chat" className="nav-link">Chat</NavLink>
 
-        {/* Admin Panel Link - Only show for admin users */}
+        {/* Admin Panel Dropdown - Only show for admin users */}
         {isLoggedIn && isAdmin && (
-          <NavLink to="/admin/users" className="nav-link admin-link" title="Admin Panel">
-            <i className="bi bi-shield-check"></i>
-            <span className="admin-text">Admin</span>
-          </NavLink>
+          <div className="admin-dropdown">
+            <button className="nav-link admin-link" title="Admin Panel">
+              <i className="bi bi-shield-check"></i>
+              <span className="admin-text">Admin</span>
+              <i className="bi bi-chevron-down"></i>
+            </button>
+            <div className="admin-dropdown-content">
+              <NavLink to="/admin/users" className="dropdown-link">
+                <i className="bi bi-people"></i>
+                User Management
+              </NavLink>
+              <NavLink to="/admin/setup" className="dropdown-link">
+                <i className="bi bi-gear"></i>
+                System Setup
+              </NavLink>
+            </div>
+          </div>
         )}
 
         {/* Settings Icon */}

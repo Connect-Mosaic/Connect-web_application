@@ -157,4 +157,12 @@ router.delete("/users/:userId/ban", authCtrl.requireSignin, authCtrl.requireAdmi
  */
 router.get("/dashboard", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.dashboard);
 
+// Admin setup routes
+router.get("/settings", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.getSettings);
+router.post("/settings/general", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.updateGeneralSettings);
+router.post("/settings/email", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.updateEmailSettings);
+router.post("/settings/security", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.updateSecuritySettings);
+router.post("/create-admin", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.createAdminUser);
+router.post("/test-email", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.testEmailConnection);
+
 export default router;
