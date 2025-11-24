@@ -23,7 +23,18 @@ app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 app.use(cookieParser());
 app.use(compress());
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "img-src": ["'self'", "*", "data:", "blob:"],
+      },
+    },
+  })
+);
+
 
 // Serve frontend build (optional)
 const CURRENT_WORKING_DIR = process.cwd();
@@ -31,7 +42,7 @@ app.use(express.static(path.join(CURRENT_WORKING_DIR, "dist/app")));
 
 // define routes
 // Allow frontend to access uploaded files
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", cors(), express.static("uploads"));
 app.use("/api/search", searchRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);

@@ -12,6 +12,7 @@ import About from "./page/About";
 import Resources from "./page/Resources";
 import ProfilePage from "./page/ProfilePage";
 import AdminManagementPage from "./page/AdminManagementPage";  // .jsx file
+import AdminSetupPage from "./page/AdminSetupPage";
 
 function App() {
 
@@ -76,6 +77,12 @@ function App() {
         <Route path="/admin/users" element={
           <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
             <AdminManagementPage />
+          </MainLayout>
+        } />
+
+        <Route path="/admin/setup" element={
+          <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+            <AdminSetupPage />
           </MainLayout>
         } />
 

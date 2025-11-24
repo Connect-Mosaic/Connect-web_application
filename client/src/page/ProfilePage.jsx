@@ -28,6 +28,7 @@ function safeParseJWT(raw) {
 }
 
 function ProfilePage() {
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const fileInputRef = useRef(null);
   const galleryInputRef = useRef(null);
   const navigate = useNavigate();
@@ -259,7 +260,7 @@ function ProfilePage() {
                 src={
                   preview ||
                   (user.profile_picture
-                    ? `http://localhost:3000${user.profile_picture}`
+                    ? `${BASE_URL}${user.profile_picture}`
                     : placeholderProfile)
                 }
                 className="profile-image"
@@ -323,10 +324,10 @@ function ProfilePage() {
               {gallery.map((photo, index) => (
                 <div className="album-tile" key={index}>
                   <img
-                    src={`http://localhost:3000${photo}`}
+                    src={`${BASE_URL}${photo}`}
                     alt="gallery"
                     className="album-photo"
-                    onClick={() => openImage(`http://localhost:3000${photo}`)}
+                    onClick={() => openImage(`${BASE_URL}${photo}`)}
                     style={{ cursor: "pointer" }}
                   />
                 </div>
