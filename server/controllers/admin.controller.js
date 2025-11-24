@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import Settings from "../models/settings.model.js";
 import extend from "lodash/extend.js";
 import errorHandler from "./error.controller.js";
 import { successResponse, errorResponse } from '../helpers/apiResponse.js';
@@ -82,9 +83,58 @@ const dashboard = async (req, res) => {
     }
 };
 
+const getSettings = async (req, res) => {
+    try {
+        console.log('[Admin] getSettings called by admin user id:', req.auth.userId);
+        const settings = await Settings.getSettings();
+        res.json(successResponse('Settings retrieved successfully', {
+            siteName: settings.siteName,
+            siteDescription: settings.siteDescription,
+            allowRegistration: settings.allowRegistration,
+            defaultUserRole: settings.defaultUserRole,
+            maxUploadSize: settings.maxUploadSize,
+            maintenanceMode: settings.maintenanceMode
+        }));
+    } catch (err) {
+        return res.json(errorResponse(errorHandler.getErrorMessage(err)));
+    }
+};
+
+const updateSettings = async (req, res) => {
+    try {
+        console.log('[Admin] updateSettings called by admin user id:', req.auth.userId);
+        let settings = await Settings.getSettings();
+        
+        const allowedFields = ['siteName', 'siteDescription', 'allowRegistration', 'defaultUserRole', 'maxUploadSize', 'maintenanceMode'];
+        allowedFields.forEach(field => {
+            if (req.body[field] !== undefined) {
+                settings[field] = req.body[field];
+            }
+        });
+        
+        settings.updatedAt = Math.floor(Date.now() / 1000);
+        settings.updatedBy = req.auth.userId;
+        
+        await settings.save();
+        
+        res.json(successResponse('Settings updated successfully', {
+            siteName: settings.siteName,
+            siteDescription: settings.siteDescription,
+            allowRegistration: settings.allowRegistration,
+            defaultUserRole: settings.defaultUserRole,
+            maxUploadSize: settings.maxUploadSize,
+            maintenanceMode: settings.maintenanceMode
+        }));
+    } catch (err) {
+        return res.json(errorResponse(errorHandler.getErrorMessage(err)));
+    }
+};
+
 export default {
     userList,
     deleteUser,
     banUser,
-    dashboard
+    dashboard,
+    getSettings,
+    updateSettings
 };

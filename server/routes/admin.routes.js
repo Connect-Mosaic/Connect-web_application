@@ -157,4 +157,92 @@ router.delete("/users/:userId/ban", authCtrl.requireSignin, authCtrl.requireAdmi
  */
 router.get("/dashboard", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.dashboard);
 
+/**
+ * @swagger
+ * /api/admin/settings:
+ *   get:
+ *     summary: Get admin settings
+ *     tags:
+ *       - Admin
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Settings retrieved successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Settings retrieved successfully"
+ *               data:
+ *                 siteName: "Connect"
+ *                 siteDescription: "Connect with your community"
+ *                 allowRegistration: true
+ *                 defaultUserRole: "student"
+ *                 maxUploadSize: 5
+ *                 maintenanceMode: false
+ *       '401':
+ *         description: Unauthorized
+ *       '403':
+ *         description: Forbidden
+ */
+router.get("/settings", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.getSettings);
+
+/**
+ * @swagger
+ * /api/admin/settings:
+ *   put:
+ *     summary: Update admin settings
+ *     tags:
+ *       - Admin
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               siteName:
+ *                 type: string
+ *                 example: "Connect"
+ *               siteDescription:
+ *                 type: string
+ *                 example: "Connect with your community"
+ *               allowRegistration:
+ *                 type: boolean
+ *                 example: true
+ *               defaultUserRole:
+ *                 type: string
+ *                 enum: [student, organizer, business]
+ *                 example: "student"
+ *               maxUploadSize:
+ *                 type: number
+ *                 example: 5
+ *               maintenanceMode:
+ *                 type: boolean
+ *                 example: false
+ *     responses:
+ *       '200':
+ *         description: Settings updated successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Settings updated successfully"
+ *               data:
+ *                 siteName: "Connect"
+ *                 siteDescription: "Connect with your community"
+ *                 allowRegistration: true
+ *                 defaultUserRole: "student"
+ *                 maxUploadSize: 5
+ *                 maintenanceMode: false
+ *       '401':
+ *         description: Unauthorized
+ *       '403':
+ *         description: Forbidden
+ */
+router.put("/settings", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.updateSettings);
+
 export default router;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./AdminManagement.css";
 import AdminDashboard from "../components/AdminDashboard";
+import AdminSettingsForm from "../components/AdminSettingsForm";
 
 function AdminManagementPage() {
   const [users, setUsers] = useState([]);
@@ -84,6 +85,9 @@ function AdminManagementPage() {
 
       {/* ─── DASHBOARD SECTION BELOW TABLE ────── */}
       <AdminDashboard />
+
+      {/* ─── SETTINGS FORM SECTION ────── */}
+      <AdminSettingsForm />
 
     </div>
   );
