@@ -112,7 +112,6 @@ const updateSettings = async (req, res) => {
             }
         });
         
-        settings.updatedAt = Math.floor(Date.now() / 1000);
         settings.updatedBy = req.auth.userId;
         
         await settings.save();

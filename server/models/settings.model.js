@@ -30,7 +30,6 @@ const SettingsSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, {
   timestamps: true
