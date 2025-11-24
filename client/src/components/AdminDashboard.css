@@ -1,0 +1,29 @@
+.dashboard-container {
+  margin-top: 50px;
+  background: #e8e4f8;
+  padding: 40px;
+  border-radius: 12px;
+}
+
+.dashboard-title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 30px;
+}
+
+.dashboard-grid {
+  display: flex;
+  justify-content: space-around;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.dashboard-card {
+  background: white;
+  width: 250px;
+  padding: 30px;
+  text-align: center;
+  border-radius: 40px;
+  font-size: 1.2rem;
+  box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+}

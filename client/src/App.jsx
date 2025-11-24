@@ -11,7 +11,6 @@ import SignupPage from "./page/SignupPage";
 import About from "./page/About";
 import Resources from "./page/Resources";
 import ProfilePage from "./page/ProfilePage";
-import AdminDashboardPage from "./page/AdminDashboardPage";  // .jsx file
 import AdminManagementPage from "./page/AdminManagementPage";  // .jsx file
 
 function App() {
@@ -73,13 +72,6 @@ function App() {
         <Route path="/about" element={<About />} />
 
         <Route path="/resources" element={<Resources />} />
-
-         {/* ADD THESE ADMIN ROUTES */}
-        <Route path="/admin/dashboard" element={
-          <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
-            <AdminDashboardPage />
-          </MainLayout>
-        } />
 
         <Route path="/admin/users" element={
           <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>

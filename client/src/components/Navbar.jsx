@@ -42,7 +42,7 @@ function Navbar({ isLoggedIn, onLogout }) {
 
         {/* Admin Panel Link - Only show for admin users */}
         {isLoggedIn && isAdmin && (
-          <NavLink to="/admin/dashboard" className="nav-link admin-link" title="Admin Panel">
+          <NavLink to="/admin/users" className="nav-link admin-link" title="Admin Panel">
             <i className="bi bi-shield-check"></i>
             <span className="admin-text">Admin</span>
           </NavLink>

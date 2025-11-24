@@ -1,0 +1,60 @@
+.admin-page-container {
+  padding: 40px;
+  background-color: #e8e4f8;
+  min-height: 100vh;
+}
+
+.admin-title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.admin-table-wrapper {
+  width: 100%;
+  background: #dcd4f3;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-table th {
+  background: #d6c9f5;
+  padding: 12px;
+  text-align: left;
+}
+
+.admin-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.loading-text {
+  text-align: center;
+  padding: 25px;
+  font-size: 1.1rem;
+}
+
+.action-btn {
+  margin-right: 8px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #ddd;
+  border: none;
+  cursor: pointer;
+}
+
+.action-btn.ban {
+  background: #ffcc80;
+}
+
+.action-btn.delete {
+  background: #ff8a80;
+}
