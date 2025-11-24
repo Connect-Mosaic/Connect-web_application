@@ -1,16 +1,13 @@
 import React, { useState,useRef,useEffect } from "react";
 import ChatSidebar from "../components/ChatSidebar";
+import "./ChatPage.css";
 
 
 
 
 function ChatPage (){
     /*state declaration*/
-    const[messages,setMessages] = useState([
-        { id: 1, sender: "User 1", text: "Hello" },
-        { id: 2, sender: "You", text: "Hi there" },
-        { id: 3, sender: "User 2", text: "How is it going?" }
-    ]);
+    const[messages,setMessages] = useState([]);
     const [input, setInput] = useState("");
 
     const messagesEndRef = useRef(null);
@@ -18,50 +15,50 @@ function ChatPage (){
     /*function to send message*/
 
 
-    const handleSend = () => {
+    const handleSend = async() => {
         if(!input.trim()) return;
 
-        const newMessage = {
-            id:messages.length + 1,
-            sender: "You",
-            text: input
-        };
+        const newMessage = {sender: "You",text: input };
 
         setMessages([...messages, newMessage]);
         setInput("");
+
+        try{await fetch("http://localhost:5000/api/messages",{
+            method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMessage)
+    });} catch(err){
+        console.error(err);
+    }
     };
     useEffect(() => {
+        fetch("http://localhost:5000/api/messages")
+        .then(res => res.json())
+        .then(data => setMessages(data))
+        .catch(err => console.error(err));
+    }, []);
+    useEffect(() =>{
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
-    return(
-        <div className="chat-page" style={{display:"flex", gap:"25px",padding:"20px"}}>
-            {/*sidebar (placeholder)*/}
-            <div className="chat-sidebar" style={{ width: "250px", borderRight: "1px solid #ccc", padding: "10px" }}>
-                <h3>contact </h3>
-                <ul>
-                    <li>User1</li>
-                    <li>User2</li>
 
-                </ul>
+    return(
+        <div className="chat-page">
+            {/*sidebar (placeholder)*/}
+            <div className="chat-sidebar">
+                <ChatSidebar/>
 
             </div>
             
             {/* main Chat area*/}
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <div className="chat-main">
                 {/*ChatWindow*/}
-                <div className="chat-window" style={{padding: "10px",border: "1px solid #ccc",height: "350px",width: "450px",overflowY: "auto"}}>
+                <div className="chat-window">
                     { messages.map(msg => (
-                        <div key={msg.id} style={{ 
-                            marginBottom: "10px",
-                            display: "flex",
-                            justifyContent: msg.sender === "You" ? "flex-end" : "flex-start"}}>
+                        <div 
+                        key={msg._id}
+                        className={`chat-message ${msg.sender === "You" ? "sent" : "received"}`}>
                             {/*placeholder chat bubble .jsx */}
-                            <p style={{
-                                padding: "10px",
-                                borderRadius: "10px",
-                                maxWidth: "70%",
-                                background: msg.sender === "You" ? "#DCF8C6" : "#eee"
-                                }}>
+                            <p >
                                 <strong>{msg.sender}: </strong> {msg.text}
 
                             </p>
@@ -73,7 +70,7 @@ function ChatPage (){
 
                 </div>
                 {/* Message Input Area */}
-                <div className="message-input" style={{ marginTop: "10px" }}>
+                <div className="message-input">
                     <textarea
                     value={input}
                     onChange ={(e) => setInput(e.target.value)}
@@ -84,10 +81,8 @@ function ChatPage (){
                         }
                     }}
                     placeholder="Type a message..."
-                    style={{ width: "350px",height: "45px",padding: "10px",resize: "none" }}
                     />
-                    <button onClick={handleSend}
-                        style={{ marginLeft: "5px", padding: "5px 10px" }}>
+                    <button onClick={handleSend} disabled={!input.trim()}>
                             send
                         </button>
 
