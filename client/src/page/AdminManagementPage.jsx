@@ -2,12 +2,19 @@ import React, { useEffect, useState } from "react";
 import "./AdminManagement.css";
 import AdminDashboard from "../components/AdminDashboard";
 import UserFormModal from "../components/UserFormModal";
+import ConfirmModal from "../components/ConfirmModal";
+
 
 function AdminManagementPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  
+  //comfirm modal state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const token = localStorage.getItem("jwt");
 
@@ -205,6 +212,13 @@ function AdminManagementPage() {
         onClose={handleCloseModal}
         user={editingUser}
         onSave={handleSaveUser}
+      />
+      <ConfirmModal
+      isOpen={confirmModalOpen}
+      title="Confirm Action"
+      message={confirmMessage}
+      onConfirm={confirmAction}
+      onCancel={() => setConfirmModalOpen(false)}
       />
 
       {/* ─── DASHBOARD SECTION BELOW TABLE ────── */}
