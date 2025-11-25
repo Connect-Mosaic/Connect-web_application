@@ -9,7 +9,7 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }) {
                 <h3>{title}</h3>
                 <p>{message}</p>
                 <div className="modal-buttons">
-                    <button className="confirm-btn" onClick={() => onConfirm?.()}>Confirm</button>
+                    <button className="confirm-btn" onClick={() => onConfirm && onConfirm ()}>Confirm</button>
 
                     <button className="cancel-btn" onClick={onCancel}>Cancel</button>
                 </div>

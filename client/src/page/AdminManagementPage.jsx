@@ -94,37 +94,33 @@ function AdminManagementPage() {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        // TODO: Add your delete API call here
-        // await fetch(`http://localhost:3000/api/admin/users/${userId}`, {
-        //   method: 'DELETE',
-        //   headers: { Authorization: `Bearer ${token}` },
-        // });
-        await fetchUsers(); // Refresh list
-      } catch (error) {
-        console.error("Error deleting user:", error);
-      }
+    setConfirmMessage("Are you sure you want to delete this user?");
+    setConfirmAction(() => () => confirmDeleteUser(userId));
+    setConfirmModalOpen(true);
+  };
+  const confirmDeleteUser = async (userId) => {
+    try {
+      console.log("Deleting user:", userId);
+      await fetchUsers(); // reflesh users
+    } catch(err){
+      console.error(" error deleting users",err);
     }
+    setConfirmModalOpen(false);
   };
 
   const handleBanUser = async (userId) => {
-    if (window.confirm("Are you sure you want to ban this user?")) {
-      try {
-        // TODO: Add your ban API call here
-        // await fetch(`http://localhost:3000/api/admin/users/${userId}/ban`, {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //     Authorization: `Bearer ${token}`,
-        //   },
-        //   body: JSON.stringify({ reason: "Admin action" }),
-        // });
-        await fetchUsers(); // Refresh list
-      } catch (error) {
-        console.error("Error banning user:", error);
-      }
+    setConfirmMessage("Are you sure you want to ban this user?");
+    setConfirmAction(() => () => confirmBanUser(userId));
+    setConfirmModalOpen(true);
+  };
+  const confirmBanUser = async (userId) => {
+    try {
+      console.log ("Ban User:",userId);
+      await fetchUsers();
+    } catch (err) {
+      console.error("Error ban user:",err);
     }
+    setConfirmModalOpen(false);
   };
 
   return (
