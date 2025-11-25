@@ -39,6 +39,7 @@ function Navbar({ isLoggedIn, onLogout }) {
         <NavLink to="/events" className="nav-link">Event</NavLink>
         <NavLink to="/map" className="nav-link">Map</NavLink>
         <NavLink to="/chat" className="nav-link">Chat</NavLink>
+        <NavLink to="/search" className="nav-link">Search</NavLink> 
 
         {/* Admin Panel Link - Only show for admin users */}
         {isLoggedIn && isAdmin && (

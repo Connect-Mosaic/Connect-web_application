@@ -12,6 +12,7 @@ import About from "./page/About";
 import Resources from "./page/Resources";
 import ProfilePage from "./page/ProfilePage";
 import AdminManagementPage from "./page/AdminManagementPage";  // .jsx file
+import SearchPage from "./page/SearchPage";
 
 function App() {
 
@@ -78,6 +79,13 @@ function App() {
             <AdminManagementPage />
           </MainLayout>
         } />
+        
+        <Route path="/search" element={
+          <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+            <SearchPage />
+          </MainLayout>
+
+        }/>
 
       </Routes>
     </Router>
