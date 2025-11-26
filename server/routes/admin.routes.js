@@ -48,6 +48,64 @@ const router = express.Router();
 
 router.get("/users", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.userList);
 
+/**
+ * @swagger
+ * /api/admin/users/{userId}:
+ *   put:
+ *     summary: Update a user's profile
+ *     tags:
+ *       - Admin
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: userId
+ *         in: path
+ *         required: true
+ *         description: ID of the user to update
+ *         schema:
+ *           type: string
+ *           example: "6913dec069dc4eef8d25c619"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               first_name:
+ *                 type: string
+ *                 example: "Test1"
+ *               last_name:
+ *                 type: string
+ *                 example: "Test2"
+ *               role:
+ *                 type: string
+ *                 example: "student"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "awaasa@gmail.com"
+ *               location:
+ *                 type: string
+ *                 example: "Toronto"
+ *     responses:
+ *       '200':
+ *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "User updated successfully"
+ *               data: null
+ *       '400':
+ *         description: Bad request
+ *       '401':
+ *         description: Unauthorized
+ *       '403':
+ *         description: Forbidden
+ */
+router.put("/users/:userId", authCtrl.requireSignin, authCtrl.requireAdminAccess, adminController.updateUser);
+
 
 /**
  * @swagger

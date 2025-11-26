@@ -8,6 +8,8 @@ const userList = async (req, res) => {
         let users = await User.find().select("first_name last_name email role location status updatedAt createdAt");
         let responseList = users.map(user => ({
             id: user._id,
+            first_name: user.first_name,
+            last_name: user.last_name,
             name: user.first_name + ' ' + user.last_name,
             email: user.email,
             role: user.role,
@@ -22,6 +24,7 @@ const userList = async (req, res) => {
         return res.json(errorResponse(errorHandler.getErrorMessage(err)));
     }
 };
+
 const deleteUser = async (req, res) => {
     try {
         console.log('[Admin] deleteUser called for user id:', req.params.userId, 'by admin user id:', req.auth.userId);
@@ -82,9 +85,31 @@ const dashboard = async (req, res) => {
     }
 };
 
+const updateUser = async (req, res) => {
+    try {
+        console.log('[Admin] updateUser called for user id:', req.params.userId, 'by admin user id:', req.auth.userId);
+        let user = await User.findById(req.params.userId);
+        if (!user) {
+            return res.json(errorResponse("User not found"));
+        }
+        // Update allowed fields
+        const allowedUpdates = ['first_name', 'last_name', 'role', 'email', 'location', 'status'];
+        allowedUpdates.forEach(field => {
+            if (req.body[field] !== undefined) {
+                user[field] = req.body[field];
+            }
+        });
+        await user.save();
+        return res.json(successResponse('User updated successfully'));
+    } catch (err) {
+        return res.json(errorResponse(errorHandler.getErrorMessage(err)));
+    }
+};
+
 export default {
     userList,
     deleteUser,
     banUser,
-    dashboard
+    dashboard,
+    updateUser
 };
