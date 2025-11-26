@@ -1,27 +1,24 @@
 import React, { useEffect, useState } from "react";
 import "./AdminDashboard.css";
+import * as adminAPI from "../apis/admin";   // ✅ use admin API wrapper
 
 function AdminDashboard() {
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem("jwt");
 
   const fetchDashboard = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/admin/dashboard", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
+      const data = await adminAPI.getAdminDashboard();  // ✅ API wrapper call
 
       if (data.success) {
         setStats(data.data);
       } else {
-        console.error(data.message);
+        console.error("Dashboard fetch failed:", data.message);
       }
     } catch (err) {
       console.error("Dashboard fetch error:", err);
     }
+
     setLoading(false);
   };
 

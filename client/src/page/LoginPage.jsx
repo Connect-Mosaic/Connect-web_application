@@ -3,6 +3,7 @@ import "./LoginPage.css";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
+import { api } from "../apis/client";   // ✅ IMPORT API WRAPPER
 
 function LoginPage({ setIsLoggedIn }) {
   const navigate = useNavigate();
@@ -16,34 +17,27 @@ function LoginPage({ setIsLoggedIn }) {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user: {
-            email,
-            password,
-          },
-          rememberMe: false,
-        }),
+      // ✅ use api.post instead of fetch + localhost
+      const data = await api.post("/api/auth/login", {
+        user: { email, password },
+        rememberMe: false,
       });
 
-      const data = await res.json();
-
-      if (data.status === "error") {
-        setError(data.message);
+      if (!data || data.status === "error") {
+        setError(data?.message || "Invalid credentials");
         return;
       }
 
-      // Login Seccess
+      // Store JWT + user
       localStorage.setItem("jwt", data.data.token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
 
-      // Update Login State
+      // Update login state globally
       setIsLoggedIn(true);
 
       navigate("/");
     } catch (err) {
+      console.error("Login error:", err);
       setError("Server error. Try again.");
     }
   };
