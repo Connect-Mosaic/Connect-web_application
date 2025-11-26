@@ -31,6 +31,8 @@ const router = express.Router();
  *               data:
  *                 - id: "6913dec069dc4eef8d25c619"
  *                   name: "undefined undefined"
+ *                   first_name: "undefined"
+ *                   last_name: "undefined"
  *                   email: "admin@example.com"
  *                   role: "admin"
  *                   location: "Toronto, Canada"
