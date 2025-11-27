@@ -42,8 +42,9 @@
 .navbar-links {
   display: flex;
   gap: 2rem;
-  margin-left: 5rem;
   align-items: center;
+  position: relative;  /* Needed for absolute centering */
+  flex: 0.75;             /* Let this area stretch */
 }
 
 /* Link text */
@@ -85,6 +86,7 @@
   align-items: center;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
+  margin-left: auto;
 }
 
 .settings-btn:hover {
@@ -167,3 +169,4 @@
     font-size: 1.2em;
   }
 }
+
