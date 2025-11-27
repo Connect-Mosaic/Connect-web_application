@@ -1,21 +1,55 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import EventList from "../components/EventList";
 import EventForm from "../components/EventForm";
 
-function EventPage(){
-    return(
-        <div className="event-page">
-            <h2>Upcoming events</h2>
-            {/*form to create a new event*/}
-            <div className="event-form">
-                <EventForm/>
-            </div>
-            <div className="event-list">
-                <EventList/>
-            </div>
+function EventPage() {
+  return (
+    <div className="events-container">
+      
+      {/* Header Section */}
+      <header className="events-header">
+        <h1>Events Near You</h1>
+        <p>Discover university events based on your interests and location.</p>
 
-        </div>  
+        {/* Filters (no functionality yet) */}
+        <div className="filter-bar">
+          <select>
+            <option>Filter by City</option>
+            <option>Toronto</option>
+            <option>Scarborough</option>
+            <option>Mississauga</option>
+          </select>
 
-    );
+          <select>
+            <option>Filter by Interest</option>
+            <option>Music</option>
+            <option>Programming</option>
+            <option>Fitness</option>
+            <option>Gaming</option>
+          </select>
+
+          <input type="text" placeholder="Search events..." />
+          
+          <EventForm />
+        </div>
+      </header>
+
+      {/* Event List Section */}
+      <section className="events-list-section">
+        <h2>All Events</h2>
+
+        {/* 
+          Replace EventList items with clickable Event cards.
+          The EventList component should internally use <Link> 
+          for each event:   <Link to={`/events/${event._id}`}>
+        */}
+        <div className="events-grid">
+          <EventList />
+        </div>
+      </section>
+    </div>
+  );
 }
+
 export default EventPage;
