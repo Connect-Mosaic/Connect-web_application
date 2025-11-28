@@ -1,0 +1,97 @@
+.event-details-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+/* Back button */
+.back-button {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: #3b3b3b;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.back-button:hover {
+  text-decoration: underline;
+}
+
+/* Purple Header */
+.event-details-header {
+  background: #ede7ff;
+  padding: 40px;
+  border-radius: 16px;
+  display: flex;
+  gap: 40px;
+}
+
+.event-details-image {
+  width: 300px;
+  height: 300px;
+  border-radius: 12px;
+  border: 2px solid #cfcfcf;
+  object-fit: cover;
+}
+
+.event-details-info h1 {
+  font-size: 40px;
+  margin-bottom: 20px;
+}
+
+.event-details-info p {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.event-tags {
+  display: flex;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.event-tag {
+  background: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+}
+
+/* Description */
+.event-description-box {
+  background: #f2edff;
+  padding: 25px;
+  border-radius: 14px;
+  margin-top: 30px;
+}
+
+/* Participants */
+.event-participants-box {
+  background: #f2edff;
+  padding: 25px;
+  border-radius: 14px;
+  margin-top: 20px;
+}
+
+.participant-avatars {
+  display: flex;
+  gap: 12px;
+  margin: 15px 0;
+}
+
+.participant-avatar {
+  width: 48px;
+  height: 48px;
+  background: #b3b3b3;
+  border-radius: 50%;
+}
+
+.details-join-btn {
+  background: #3b3b3b;
+  color: white;
+  padding: 12px 28px;
+  border-radius: 24px;
+  border: none;
+  cursor: pointer;
+}

@@ -1,40 +1,77 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import EventList from "../components/EventList";
+import { api } from "../apis/client";
 import EventForm from "../components/EventForm";
+import "./EventPage.css";
 
 function EventPage() {
-  const [events,setEvents] = useState([]);
-  const [error, setError]  =  useState(null);
-  const [loading, setLoading]  =  useState(true);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  useEffect (() => {
-    fetch("http://localhost:5000/api/events")
-    .then(res => res.json())
-    .then(data => {
-      setEvents(data);
+  const formatDate = (isoString) => {
+    if (!isoString) return "Unknown";
+    return new Date(isoString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const fetchEvents = async () => {
+    try {
+      const res = await api.get("/api/events");
+      setEvents(res.data || []);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load events");
+    } finally {
       setLoading(false);
-    })
-    .catch(err => { console.error(err);
-    setError("Failed to load...");
-    setLoading(false);
-    } );
-  },[]);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const handleJoin = async (eventId) => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user) {
+        alert("You must be logged in to join an event.");
+        return;
+      }
+
+      const res = await api.post(`/api/events/${eventId}/join`, {
+        userId: user._id,
+      });
+
+      setEvents((prev) =>
+        prev.map((ev) =>
+          ev._id === eventId
+            ? { ...ev, participants: res.data.participants }
+            : ev
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Failed to join event.");
+    }
+  };
 
   if (loading) return <p>Loading events...</p>;
   if (error) return <p>{error}</p>;
 
-
-
   return (
     <div className="events-container">
       
-      {/* Header Section */}
+      {/* ============================ */}
+      {/* Header (Purple Background)   */}
+      {/* ============================ */}
       <header className="events-header">
         <h1>Events Near You</h1>
         <p>Discover university events based on your interests and location.</p>
 
-        
         <div className="filter-bar">
           <select>
             <option>Filter by City</option>
@@ -45,57 +82,79 @@ function EventPage() {
           </select>
 
           <input type="text" placeholder="Search events..." />
-          
-          <EventForm />
+
+          <EventForm
+            onEventCreated={(newEvent) => setEvents([...events, newEvent])}
+          />
         </div>
       </header>
 
-      {/* Event List Section */}
+      {/* ============================ */}
+      {/* All Events (White Section)   */}
+      {/* ============================ */}
       <section className="events-list-section">
         <h2>All Events</h2>
 
-        
         <div className="events-list">
-          {events.map(event => (
-            <div key={event._id} className="event-card">
-          
-              {/*TOP SECTION */}
+          {events.map((event) => (
+            <div key={event.id} className="event-card">
               <div className="event-top">
                 <div className="event-image">
-                  <img src={event.image} alt={event.title} />
+                  <img
+                    src={event.image || "/no-image.png"}
+                    alt={event.title}
+                  />
                 </div>
-                {/*RIGHT:Title,Date,time,Location */}
+
                 <div className="event-info">
                   <h3>{event.title}</h3>
-                  <p><strong>Date:</strong> {event.date}</p>
-                  <p><strong>Time:</strong> {event.time}</p>
-                  <p><strong>Location:</strong> {event.location}</p>
-                  <Link to={`/events/${event._id}`}>View Details</Link>
+
+                  <p>
+                    <strong>Date:</strong> {formatDate(event.date)}
+                  </p>
+
+                  <p>
+                    <strong>Time:</strong> {event.startTime} – {event.endTime}
+                  </p>
+
+                  <p>
+                    <strong>Location:</strong> {event.location}
+                  </p>
+
                 </div>
-
-
               </div>
-              {/*Description Card */}
+
               <div className="event-description">
                 <h4>Description</h4>
                 <p>{event.description}</p>
-
               </div>
-              {/*Participant Card */}
+
               <div className="event-participants">
                 <h4>Participants</h4>
+
                 {event.participants?.length > 0 ? (
                   <ul>
                     {event.participants.map((user, index) => (
-                      <li key={index}>{user}</li>
+                      <li key={user._id || index}>
+                        {user.first_name
+                          ? `${user.first_name} ${user.last_name}`
+                          : user.email || "Unknown User"}
+                      </li>
                     ))}
                   </ul>
-                ): ( <p>No participants yet.</p>) 
-                }
-                <button>Join Event</button>
-
+                ) : (
+                  <p>No participants yet.</p>
+                )}
               </div>
-              <hr/>
+
+              {/* Join + Edit Buttons */}
+              <div className="event-actions">
+                <button onClick={() => handleJoin(event.id)}>Join Event</button>
+
+                <Link to={`/events/${event.id}/edit`} className="edit-btn">
+                  Edit
+                </Link>
+              </div>
             </div>
           ))}
         </div>

@@ -1,0 +1,158 @@
+/* ==============================
+   PAGE CONTAINER
+================================= */
+.events-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* ==============================
+   HEADER AREA — LIGHT PURPLE
+================================= */
+.events-header {
+  background: #e7e0fa;
+  padding: 50px 60px;
+  border-radius: 0 0 20px 20px;
+}
+
+.events-header h1 {
+  font-size: 44px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.events-header p {
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-bar select,
+.filter-bar input {
+  padding: 10px 16px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 24px;
+  background: #fff;
+  min-width: 180px;
+}
+
+.filter-bar input {
+  width: 240px;
+}
+
+/* ==============================
+   ALL EVENTS SECTION — WHITE
+================================= */
+.events-list-section {
+  background: white;
+  padding: 40px 60px;
+}
+
+.events-list-section h2 {
+  font-size: 28px;
+  margin-bottom: 25px;
+}
+
+/* ==============================
+   GRID
+================================= */
+.events-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+}
+
+/* ==============================
+   EVENT CARD
+================================= */
+
+.events-list-section {
+  background: #f5f6f9;   
+  padding: 40px 60px;
+}
+
+.event-card {
+  background: #ffffff;
+  border: 2px solid #d6d6d6;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0px 3px 6px rgba(0,0,0,0.05);
+}
+
+.event-top {
+  display: flex;
+  gap: 20px;
+}
+
+.event-image img {
+  width: 150px;
+  height: 150px;
+  border-radius: 12px;
+  border: 2px solid #cccccc;
+  object-fit: cover;
+}
+
+.event-info h3 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* ==============================
+   DESCRIPTION
+================================= */
+.event-description {
+  margin-top: 20px;
+}
+
+.event-description h4 {
+  font-size: 17px;
+}
+
+.event-description p {
+  font-size: 14px;
+  color: #444;
+}
+
+/* ==============================
+   PARTICIPANTS
+================================= */
+.event-participants {
+  margin-top: 20px;
+}
+
+/* ==============================
+   BUTTONS
+================================= */
+.event-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.event-actions button {
+  background: #3b3b3b;
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 24px;
+  cursor: pointer;
+}
+
+.event-actions .edit-btn {
+  background: white;
+  color: #3b3b3b;
+  border: 2px solid #3b3b3b;
+  padding: 10px 22px;
+  border-radius: 24px;
+  text-decoration: none;
+  font-size: 15px;
+}

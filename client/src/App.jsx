@@ -13,6 +13,7 @@ import Resources from "./page/Resources";
 import ProfilePage from "./page/ProfilePage";
 import AdminManagementPage from "./page/AdminManagementPage";  // .jsx file
 import SearchPage from "./page/SearchPage";
+import EventDetail from "./page/EventDetail";
 
 function App() {
 
@@ -86,6 +87,8 @@ function App() {
           </MainLayout>
 
         }/>
+
+        <Route path="/events/:id/edit" element={<EventDetail />} />
 
       </Routes>
     </Router>
