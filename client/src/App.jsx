@@ -43,7 +43,7 @@ function App() {
 
         <Route path="/events" element={
           <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
-            <EventPage />
+            <EventPage/>
           </MainLayout>
         } />
 
