@@ -16,17 +16,10 @@ function EventPage() {
         <div className="filter-bar">
           <select>
             <option>Filter by City</option>
-            <option>Toronto</option>
-            <option>Scarborough</option>
-            <option>Mississauga</option>
           </select>
 
           <select>
             <option>Filter by Interest</option>
-            <option>Music</option>
-            <option>Programming</option>
-            <option>Fitness</option>
-            <option>Gaming</option>
           </select>
 
           <input type="text" placeholder="Search events..." />
