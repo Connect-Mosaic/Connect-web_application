@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import searchRoutes from "./routes/search.route.js";
+import eventRoutes from "./routes/event.routes.js";
 
 const app = express();
 app.use(
@@ -47,6 +48,7 @@ app.use("/api/search", searchRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/events", eventRoutes);
 
 
 // Your health API
