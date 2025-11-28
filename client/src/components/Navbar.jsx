@@ -23,15 +23,6 @@ function Navbar({ isLoggedIn, onLogout }) {
         <h2>Mosaic Connect</h2>
       </div>
 
-      {/* Search Bar */}
-      <div className="navbar-search">
-        <input 
-          type="text" 
-          placeholder="Search for friends or events..." 
-          className="search-input"
-        />
-      </div>
-
       {/* Right: Navigation links */}
       <div className="navbar-links">
         <NavLink to="/" end className="nav-link">Home</NavLink>
