@@ -50,4 +50,4 @@ const router = express.Router();
  *                       example: ["event1", "event2"]
  */
 router.get("/", authCtrl.requireSignin, searchController.search);
-export default router;
+export default router; 
