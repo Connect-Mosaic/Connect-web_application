@@ -88,7 +88,18 @@ function App() {
 
         }/>
 
-        <Route path="/events/:id/edit" element={<EventDetail />} />
+        <Route path="/events/:id" element={
+  <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+    <EventDetail />
+  </MainLayout>
+} />
+
+<Route path="/events/:id/edit" element={
+  <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+    {/* You'll need to create an EventEdit component later */}
+    <div>Edit Event Page - To be implemented</div>
+  </MainLayout>
+} />
 
       </Routes>
     </Router>
