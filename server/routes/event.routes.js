@@ -108,6 +108,9 @@ const router = express.Router();
  *                   organizer:
  *                     _id: "6920e1eb6616a340293777ff"
  *                     email: "testuser@example.com"
+ *                   coordinates:
+ *                     lat: 43.73421522946456
+ *                     lng: -79.35428474823435
  */
 
 /**
@@ -197,16 +200,74 @@ const router = express.Router();
  *       '404':
  *         description: Event not found
  */
-router.post("/:eventId/join", authCont.requireSignin, eventCont.joinEvent);
-
 router.route("/")
     .get(eventCont.list)
     .post(authCont.requireSignin, eventCont.create);
-
+/**
+ * @swagger
+ * /api/events/search:
+ *   get:
+ *     summary: Search events by query
+ *     tags:
+ *       - Events
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search term to filter events by title, description, city, interests, etc.
+ *     responses:
+ *       '200':
+ *         description: Search results retrieved successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: Search results retrieved successfully
+ *               data:
+ *                 events:
+ *                   - coordinates:
+ *                       lat: 43.6487
+ *                       lng: -79.3854
+ *                     _id: "6929878162e4d2f6c451ebaf"
+ *                     title: "AI Workshop: Build Your First Chatbot"
+ *                     description: "A beginner-friendly workshop teaching students how to build AI chatbots using Node.js and OpenAI APIs."
+ *                     city: "Toronto"
+ *                     location: "100 King St W, Toronto, ON"
+ *                     date: "2025-12-01T00:00:00.000Z"
+ *                     startTime: "14:00"
+ *                     endTime: "17:00"
+ *                     interests:
+ *                       - "coding"
+ *                       - "AI"
+ *                       - "chatbot"
+ *                     image: "https://example.com/ai-workshop.png"
+ *                     capacity: 80
+ *                     participants:
+ *                       - "69298c2e94632fc91d3b46f7"
+ *                       - "691923e87176ae6f6aabafe5"
+ *                       - "692a0fec11e691da009eaba1"
+ *                       - "691a8f18233bfa6b437a7432"
+ *                       - "691a6e77c2444f39a6705da2"
+ *                     visibility: "public"
+ *                     organizer:
+ *                       _id: "6920e1eb6616a340293777ff"
+ *                       first_name: "Albert Liu"
+ *                       last_name: "Liu"
+ *                       email: "testuser@example.com"
+ *                     createdAt: "2025-11-28T11:29:05.862Z"
+ *                     updatedAt: "2025-12-01T15:10:33.698Z"
+ *                     __v: 5
+ */
+router.get("/search", eventCont.searchEvents);
+router.post("/:eventId/join", authCont.requireSignin, eventCont.joinEvent);
 router.route("/:eventId")
     .get(eventCont.eventByID)
     .put(authCont.requireSignin, eventCont.update)
     .delete(authCont.requireSignin, eventCont.remove);
+
+
 
 
 

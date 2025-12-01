@@ -2,6 +2,8 @@ import extend from "lodash/extend.js";
 import errorHandler from "./error.controller.js";
 import { successResponse, errorResponse } from '../helpers/apiResponse.js';
 import Event from "../models/events.model.js";
+import { geocodeAddress } from "../helpers/geocode.js";
+import mongoose from "mongoose";
 
 const create = async (req, res) => {
     try {
@@ -27,18 +29,37 @@ const list = async (req, res) => {
             endTime: event.endTime,
             organizer: event.organizer,
             interests: event.interests,
-            image: event.image
+            image: event.image,
+            coordinates: event.coordinates ? { lat: event.coordinates.lat, lng: event.coordinates.lng } : null
         }));
+
+        for (let event of responseList) {
+            // check undifined or empty coordinates
+            if (!event.coordinates || (event.coordinates.lat === undefined && event.coordinates.lng === undefined)) {
+                try {
+                    // const coords = await geocodeAddress(event.location);
+                    // event.coordinates = coords;
+                    // generate mock coordinates for testing 
+                    const coords = { lat: 43.6532 + Math.random() * 0.1, lng: -79.3832 + Math.random() * 0.1 };
+                    event.coordinates = coords;
+                } catch (geoErr) {
+                    console.error(`[Event:list] Geocoding failed for location "${event.location}":`, geoErr);
+                }
+            }
+        }
         return res.json(successResponse('Events retrieved successfully', responseList));
     } catch (err) {
         console.error('[Event:list] Error:', err);
         return res.status(500).json(errorResponse('An error occurred while fetching events'));
     }
 };
-
 const eventByID = async (req, res) => {
     try {
         const id = req.params.eventId;
+        // validate ObjectId to avoid CastError when route param is non-id (e.g., /events/search)
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json(errorResponse('Invalid event id'));
+        }
         const event = await Event.findById(id).populate('organizer', 'first_name last_name email').populate('participants', 'first_name last_name email').exec();
         if (!event) return res.status(404).json(errorResponse('Event not found'));
         return res.json(successResponse('Event retrieved successfully', event));
@@ -47,6 +68,7 @@ const eventByID = async (req, res) => {
         return res.status(500).json(errorResponse('Error loading event'));
     }
 };
+
 
 
 const update = async (req, res) => {
@@ -142,6 +164,48 @@ const joinEvent = async (req, res) => {
     }
 };
 
+const searchEvents = async (req, res) => {
+    try {
+        console.log('[Event:searchEvents] Incoming request', { q: req.query.q });
+        const q = req.query.q || '';
+        const regex = new RegExp(q, 'i');
+        const events = await Event.find({
+            $or: [{ title: regex }, { location: regex }]
+        }).populate('organizer', 'first_name last_name email').exec();
+
+        console.log(`[Event:searchEvents] Found ${events.length} events for query "${q}"`);
+
+        // Geocode locations for events missing coordinates
+        for (let event of events) {
+            const hasCoords = event.coordinates && event.coordinates.lat !== undefined && event.coordinates.lng !== undefined;
+            if (!hasCoords) {
+                try {
+                    console.log(`[Event:searchEvents] Event ${event._id} missing coordinates. Location: "${event.location}"`);
+                    // const coords = await geocodeAddress(event.location);
+                    // if (coords) {
+                    //     event.coordinates = { lat: coords.lat, lng: coords.lng };
+                    //     await event.save();
+                    // }
+
+                    // generate mock coordinates for testing
+                    const coords = { lat: 43.6532 + Math.random() * 0.1, lng: -79.3832 + Math.random() * 0.1 };
+                    event.coordinates = coords;
+                    console.log(`[Event:searchEvents] Saved mock coordinates for event ${event._id}`, coords);
+                } catch (geoErr) {
+                    console.error(`[Event:searchEvents] Geocoding/save failed for location "${event.location}" (event ${event._id}):`, geoErr);
+                }
+            } else {
+                console.log(`[Event:searchEvents] Event ${event._id} already has coordinates`, event.coordinates);
+            }
+        }
+
+        return res.json(successResponse('Search results retrieved successfully', { events }));
+    } catch (err) {
+        console.error('[Event:searchEvents] Error:', err);
+        return res.status(500).json(errorResponse('An error occurred while searching events'));
+    }
+};
+
 export default {
     create,
     list,
@@ -149,5 +213,6 @@ export default {
     update,
     remove,
     search,
-    joinEvent
+    joinEvent,
+    searchEvents
 };
