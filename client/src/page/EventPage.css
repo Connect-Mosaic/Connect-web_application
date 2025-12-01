@@ -156,3 +156,14 @@
   text-decoration: none;
   font-size: 15px;
 }
+
+
+
+.event-title-link {
+  text-decoration: none;
+  color: #3b82f6;
+}
+
+.event-title-link:hover h3 {
+  text-decoration: underline;
+}

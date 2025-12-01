@@ -8,6 +8,14 @@ function EventPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      setCurrentUser(JSON.parse(userData));
+    }
+  }, []);
 
   const formatDate = (isoString) => {
     if (!isoString) return "Unknown";
@@ -42,21 +50,21 @@ function EventPage() {
         return;
       }
 
-      const res = await api.post(`/api/events/${eventId}/join`, {
-        userId: user._id,
-      });
-
-      setEvents((prev) =>
-        prev.map((ev) =>
-          ev._id === eventId
-            ? { ...ev, participants: res.data.participants }
-            : ev
-        )
-      );
+      const res = await api.post(`/api/events/${eventId}/join`);
+      
+      // Simple success check 
+      await fetchEvents();
+      alert("Successfully joined the event!");
+      
     } catch (err) {
-      console.error(err);
-      alert("Failed to join event.");
+      console.error("Join error:", err);
+      alert("Failed to join event. Please try again.");
     }
+  };
+
+  const isUserOrganizer = (event) => {
+    if (!currentUser || !event.organizer) return false;
+    return event.organizer._id === currentUser._id;
   };
 
   if (loading) return <p>Loading events...</p>;
@@ -64,10 +72,6 @@ function EventPage() {
 
   return (
     <div className="events-container">
-      
-      {/* ============================ */}
-      {/* Header (Purple Background)   */}
-      {/* ============================ */}
       <header className="events-header">
         <h1>Events Near You</h1>
         <p>Discover university events based on your interests and location.</p>
@@ -89,9 +93,6 @@ function EventPage() {
         </div>
       </header>
 
-      {/* ============================ */}
-      {/* All Events (White Section)   */}
-      {/* ============================ */}
       <section className="events-list-section">
         <h2>All Events</h2>
 
@@ -107,30 +108,34 @@ function EventPage() {
                 </div>
 
                 <div className="event-info">
-                  <h3>{event.title}</h3>
+                  {/* Clickable Event Title */}
+                  <Link to={`/events/${event.id}`} className="event-title-link">
+                    <h3>{event.title}</h3>
+                  </Link>
 
-                  <p>
-                    <strong>Date:</strong> {formatDate(event.date)}
-                  </p>
+                  <p><strong>Date:</strong> {formatDate(event.date)}</p>
+                  <p><strong>Time:</strong> {event.startTime} – {event.endTime}</p>
+                  <p><strong>Location:</strong> {event.location}</p>
 
-                  <p>
-                    <strong>Time:</strong> {event.startTime} – {event.endTime}
-                  </p>
-
-                  <p>
-                    <strong>Location:</strong> {event.location}
-                  </p>
-
+                  {event.organizer && (
+                    <p>
+                      <strong>Organizer:</strong>{" "}
+                      {event.organizer.first_name 
+                        ? `${event.organizer.first_name} ${event.organizer.last_name}`
+                        : event.organizer.email || "Unknown"
+                      }
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="event-description">
                 <h4>Description</h4>
-                <p>{event.description}</p>
+                <p>{event.description || "No description available."}</p>
               </div>
 
               <div className="event-participants">
-                <h4>Participants</h4>
+                <h4>Participants ({event.participants?.length || 0})</h4>
 
                 {event.participants?.length > 0 ? (
                   <ul>
@@ -147,13 +152,17 @@ function EventPage() {
                 )}
               </div>
 
-              {/* Join + Edit Buttons */}
               <div className="event-actions">
-                <button onClick={() => handleJoin(event.id)}>Join Event</button>
+                <button onClick={() => handleJoin(event.id)}>
+                  Join Event
+                </button>
 
-                <Link to={`/events/${event.id}/edit`} className="edit-btn">
-                  Edit
-                </Link>
+                {/* Edit Button - Only show for event organizer */}
+                {isUserOrganizer(event) && (
+                  <Link to={`/events/${event.id}/edit`} className="edit-btn">
+                    Edit
+                  </Link>
+                )}
               </div>
             </div>
           ))}
