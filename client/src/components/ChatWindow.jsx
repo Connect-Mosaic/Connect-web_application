@@ -1,14 +1,33 @@
-import React from "react";
+import React,{useState} from "react";
 
 
-function ChatWindow (){
+function ChatWindow ( { messages = [], activeUser }){
+    const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    },[messages]);
+
     return(
-        <div className="chatwindoe" style={{padding:"10px",border:"1px",height:"350px",width:"450"}}>
-            <p><strong>User 1:</strong> Hello</p>
-            <p><strong>You:</strong> Hi there </p>
-            <p><strong>User 2:</strong> How is the going?</p>
-        </div>
+        <div className="chat-window">
+            {messages.length === 0 ? (
+                <p className="no-messages">No messages yet. Say hi!</p>
+            ):(
+                messages.map((msg, index) => (
+                    <div
+                    key={index}
+                    className={`chat-message ${msg.sender === activeUser ? "sent" : "received"}`}
+                    >
+                        <p>
+                            <strong>{msg.sender}: </strong>
+                            {msg.text}
+                        </p>
+                 </div>
+                ))
 
+            )}
+            <div ref={messagesEndRef} />
+            </div>
     );
 }
 export default ChatWindow;

@@ -1,5 +1,6 @@
 import React, { useState,useRef,useEffect } from "react";
 import ChatSidebar from "../components/ChatSidebar";
+import ChatWindow from "../components/ChatWindow";
 import "./ChatPage.css";
 
 
@@ -9,66 +10,64 @@ function ChatPage (){
     /*state declaration*/
     const[messages,setMessages] = useState([]);
     const [input, setInput] = useState("");
+    const [selectedUser, setSelectedUser] = useState(null); // current chat user
 
-    const messagesEndRef = useRef(null);
+    const activeUser = "You";
+
+    // message for selected user
+    useEffect(() => {
+        if (!selectedUser) return;
+        fetch(`http://localhost:5000/api/messages?sender=${activeUser}&receiver=${selectedUser}`)
+        .then((res) => res.json())
+        .then((data) => setMessages(data))
+        .catch((err) => console.error(err));
+    } , [selectedUser]);
+
+
 
     /*function to send message*/
-
-
     const handleSend = async() => {
-        if(!input.trim()) return;
+        if(!input.trim() || !selectedUser) return;
 
-        const newMessage = {sender: "You",text: input };
+        const newMessage = {
+            sender: activeUser,
+            text: input,
+            receiver: selectedUser, 
+        };
 
-        setMessages([...messages, newMessage]);
+        setMessages((prev) => [...prev, newMessage]);;
         setInput("");
 
         try{await fetch("http://localhost:5000/api/messages",{
             method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newMessage)
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newMessage)
     });} catch(err){
         console.error(err);
     }
     };
-    useEffect(() => {
-        fetch("http://localhost:5000/api/messages")
-        .then(res => res.json())
-        .then(data => setMessages(data))
-        .catch(err => console.error(err));
-    }, []);
-    useEffect(() =>{
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
-
+    
     return(
         <div className="chat-page">
-            {/*sidebar (placeholder)*/}
+            {/*sidebar*/}
             <div className="chat-sidebar">
-                <ChatSidebar/>
+                <ChatSidebar onSelectUser={setSelectedUser}/>
 
             </div>
             
             {/* main Chat area*/}
             <div className="chat-main">
-                {/*ChatWindow*/}
-                <div className="chat-window">
-                    { messages.map(msg => (
-                        <div 
-                        key={msg._id}
-                        className={`chat-message ${msg.sender === "You" ? "sent" : "received"}`}>
-                            {/*placeholder chat bubble .jsx */}
-                            <p >
-                                <strong>{msg.sender}: </strong> {msg.text}
+                {!selectedUser ? (
+                    <div className="chat-window placeholder">
+                        <h3>Select a user to start chatting</h3>
+                    </div>
+                ): (
+                    <>
 
-                            </p>
-
-                        </div>
-                    ))}
-                    {/* Auto-scroll target */}
-                    <div ref={messagesEndRef} />
-
-                </div>
+                     {/*ChatWindow*/}
+                    <ChatWindow messages={messages} activeUser={activeUser} />
+               
+                
                 {/* Message Input Area */}
                 <div className="message-input">
                     <textarea
@@ -87,7 +86,8 @@ function ChatPage (){
                         </button>
 
                 </div>
-                
+                </>
+                )}
             </div>
 
         </div>
