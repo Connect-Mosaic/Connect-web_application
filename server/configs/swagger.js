@@ -23,6 +23,36 @@ const options = {
                 description: "Local Dev Server",
             },
         ],
+        tags: [
+            {
+                name: "Users",
+                description: "User profile, settings, and general user actions"
+            },
+            {
+                name: "Admin",
+                description: "Admin-only operations and management"
+            },
+            {
+                name: "Auth",
+                description: "Login, signup, and authentication APIs"
+            },
+            {
+                name: "Conversations",
+                description: "1-to-1 and group conversation APIs"
+            },
+            {
+                name: "Messages",
+                description: "Message sending, fetching, deleting, and read status"
+            },
+            {
+                name: "Events",
+                description: "Event listing, details, joining, and map coordinates"
+            },
+            {
+                name: "Search",
+                description: "Search APIs for users, events, and locations"
+            }
+        ]
     },
     apis: [routesPath],
 };

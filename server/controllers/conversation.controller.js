@@ -27,7 +27,7 @@ const createConversation = async (req, res) => {
 
 
         console.info('createConversation success', { conversationId: conversation._id });
-        res.json(successResponse("Conversation created successfully"));
+        res.json(successResponse("Conversation created successfully", { conversationId: conversation._id }));
     } catch (err) {
         console.error('createConversation error', err);
         res.json(errorResponse(err.message));
@@ -86,14 +86,26 @@ const updateConversation = async (req, res) => {
         const id = req.params.id;
         console.info('updateConversation called', { id, updateFields: Object.keys(req.body) });
 
-        const updated = await Conversation.findByIdAndUpdate(
-            id,
-            req.body,
-            { new: true }
-        );
-
+        const conversation = await Conversation.findById(id);
+        if (!conversation) {
+            console.warn('updateConversation not found', { id });
+            return res.json(errorResponse("Conversation not found"));
+        }
+        // Prevent updating certain fields
+        const allowedUpdates = ['display_name', 'display_image'];
+        Object.keys(req.body).forEach(key => {
+            if (!allowedUpdates.includes(key)) {
+                delete req.body[key];
+            }
+        });
+        allowedUpdates.forEach(field => {
+            if (req.body[field] !== undefined) {
+                conversation[field] = req.body[field];
+            }
+        });
+        await conversation.save();
         console.info('updateConversation success', { id });
-        res.json(successResponse("Conversation updated", updated));
+        res.json(successResponse("Conversation updated successfully"));
     } catch (err) {
         console.error('updateConversation error', err);
         res.json(errorResponse(err.message));
@@ -112,7 +124,7 @@ const deleteConversation = async (req, res) => {
         }
 
         console.info('deleteConversation success', { id });
-        res.json(successResponse("Conversation deleted"));
+        res.json(successResponse("Conversation deleted successfully"));
     } catch (err) {
         console.error('deleteConversation error', err);
         res.json(errorResponse(err.message));

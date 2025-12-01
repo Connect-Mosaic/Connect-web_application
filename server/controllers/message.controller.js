@@ -76,6 +76,26 @@ const getMessages = async (req, res) => {
             edited: msg.edited,
             timestamp: msg.timestamp
         }));
+
+        // and mark messages as read for the requesting user
+        const userId = req.auth.userId;
+        const unreadMessages = messages.filter(msg => !msg.read_by.includes(userId) && msg.sender.toString() !== userId);
+        for (let msg of unreadMessages) {
+            msg.read_by.push(userId);
+            await msg.save();
+            console.log('Marked message as read during getMessages', { message_id: msg._id, userId });
+        }
+        // Update unread count in Conversation
+        const conversation = await Conversation.findById(req.params.conversation_id);
+        if (conversation && conversation.unread_count) {
+            const currentCount = conversation.unread_count.get(userId) || 0;
+            if (currentCount > 0) {
+                conversation.unread_count.set(userId, 0);
+                await conversation.save();
+                console.log('Reset unread count in conversation during getMessages', { conversation_id: conversation._id, userId });
+            }
+        }
+
         res.json(successResponse("Messages retrieved", responseList));
     } catch (err) {
         console.error('getMessages error', err.stack || err);
@@ -141,7 +161,7 @@ const editMessage = async (req, res) => {
         );
 
         console.log('Message edited', { id: req.params.message_id, edited: !!message });
-        res.json(successResponse("Message edited", message));
+        res.json(successResponse("Message edited Successfully"));
     } catch (err) {
         console.error('editMessage error', err.stack || err);
         res.json(errorResponse(err.message));
@@ -159,7 +179,7 @@ const deleteMessage = async (req, res) => {
         );
 
         console.log('Message deleted (soft)', { id: req.params.message_id, deleted: !!message });
-        res.json(successResponse("Message deleted", message));
+        res.json(successResponse("Message deleted Successfully"));
     } catch (err) {
         console.error('deleteMessage error', err.stack || err);
         res.json(errorResponse(err.message));
