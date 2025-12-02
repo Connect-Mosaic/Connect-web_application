@@ -2,16 +2,8 @@ import mongoose from 'mongoose';
 import crypto from "crypto";
 
 const UserSchema = new mongoose.Schema({
-  first_name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  last_name: {
-    type: String,
-    required: true,
-    trim: true
-  },
+first_name: { type: String, required: true, trim: true },
+  last_name: { type: String, required: true, trim: true },
   email: {
     type: String,
     required: "Email is required",
@@ -21,36 +13,18 @@ const UserSchema = new mongoose.Schema({
     match: [/.+\@.+\..+/, "Please fill a valid email address"],
   },
   hashed_password: { type: String, required: "Password is required" },
-  role: {
-    type: String,
-    enum: ['student', 'admin', 'organizer', 'business'],
-    default: 'student'
-  },
+  role: { type: String, enum: ['student','admin','organizer','business'], default: 'student' },
   interests: [String],
   university: String,
   program: String,
-  profile_picture: {
-    type: String,
-    default: "/uploads/profile/default.png",  // default placeholder
-  },
-  photos: {
-    type: [String],
-    default: []
-  },
+  profile_picture: { type: String, default: "/uploads/profile/default.png" },
+  photos: { type: [String], default: [] },
   bio: String,
   location: String,
   salt: String,
-  status: {
-    type: String,
-    enum: ['active', 'inactive', 'banned'],
-    default: 'active'
-  },
-  createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
-  updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
+  status: { type: String, enum: ['active','inactive','banned'], default: 'active' },
   last_login_at: { type: Number, default: () => Math.floor(Date.now() / 1000) }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
 UserSchema.virtual("password")
   .set(function (password) {

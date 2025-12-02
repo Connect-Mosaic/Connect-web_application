@@ -18,10 +18,14 @@ const create = async (req, res) => {
 -------------------------- */
 const list = async (req, res) => {
   try {
-    let users = await User.find().select("name email updated created");
-    res.json(successResponse('Users retrieved successfully', users));
+    const users = await User.find().select(
+      "first_name last_name email role university program location profile_picture createdAt updatedAt"
+    );
+
+    return res.json(successResponse("Users retrieved successfully", users));
   } catch (err) {
-    return res.json(errorResponse(errorHandler.getErrorMessage(err)));
+    console.error("[User List Error]", err);
+    return res.status(500).json(errorResponse(errorHandler.getErrorMessage(err)));
   }
 };
 
