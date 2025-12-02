@@ -5,68 +5,58 @@ import "./ChatPage.css";
 import { api } from "../apis/client.js";
 
 function ChatPage() {
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Get logged-in user from localStorage
   const jwt = localStorage.getItem("jwt");
-  const activeUser = jwt ? JSON.parse(jwt).user : null; // contains _id, first_name, last_name
+  const activeUser = jwt ? JSON.parse(jwt).user : null;
 
-  // Fetch all users
+  // Fetch conversations
   useEffect(() => {
     if (!activeUser) return;
 
     api
-      .get("/api/users") // correct singular route
+      .get("/api/conversations", { params: { userId: activeUser._id } })
       .then((res) => {
-        if (res && res.data) {
-          // exclude the logged-in user
-          const filtered = res.data.filter((u) => u._id !== activeUser._id);
-          setUsers(filtered);
+        if (Array.isArray(res.data)) {
+          setConversations(res.data);
         } else {
-          console.error("Invalid response format from API:", res);
+          console.error("Invalid response format from API:", res.data);
         }
       })
-      .catch((err) => console.error("Failed to fetch users:", err));
+      .catch((err) => console.error("Failed to fetch conversations:", err));
   }, [activeUser]);
 
-  // Fetch messages for selected user
+  // Fetch messages for selected conversation
   useEffect(() => {
-    if (!selectedUser || !activeUser) return;
+    if (!selectedConversation || !activeUser) return;
 
     setLoading(true);
 
     api
-      .get(`/api/messages?sender=${activeUser._id}&receiver=${selectedUser._id}`)
+      .get(`/api/messages?conversationId=${selectedConversation._id}`)
       .then((res) => {
-        if (res && res.data) {
+        if (res.data) {
           setMessages(res.data);
-
-          // add to conversations if not already there
-          setConversations((prev) =>
-            prev.find((u) => u._id === selectedUser._id)
-              ? prev
-              : [...prev, selectedUser]
-          );
         } else {
           console.error("Invalid messages response:", res);
         }
       })
       .catch((err) => console.error("Failed to fetch messages:", err))
       .finally(() => setLoading(false));
-  }, [selectedUser, activeUser]);
+  }, [selectedConversation, activeUser]);
 
   // Send message
   const handleSend = async () => {
-    if (!input.trim() || !selectedUser) return;
+    if (!input.trim() || !selectedConversation) return;
 
     const newMessage = {
       sender: activeUser._id,
-      receiver: selectedUser._id,
+      conversation: selectedConversation._id,
       text: input,
       timestamp: new Date().toISOString(),
     };
@@ -85,17 +75,17 @@ function ChatPage() {
     <div className="chat-page">
       <div className="chat-sidebar">
         <ChatSidebar
-          onSelectUser={setSelectedUser}
-          users={users}
-          selectedUser={selectedUser}
           conversations={conversations}
+          selectedConversation={selectedConversation}
+          onSelectConversation={setSelectedConversation}
+          activeUser={activeUser}
         />
       </div>
 
       <div className="chat-main">
-        {!selectedUser ? (
+        {!selectedConversation ? (
           <div className="chat-window placeholder">
-            <h3>Select a user to start chatting</h3>
+            <h3>Select a conversation to start chatting</h3>
           </div>
         ) : loading ? (
           <div className="chat-window placeholder">
@@ -118,7 +108,7 @@ function ChatPage() {
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || !selectedUser}
+                disabled={!input.trim() || !selectedConversation}
               >
                 Send
               </button>

@@ -4,6 +4,7 @@
   border-radius: 5px;
   height: 350px;
   width: 450px;
+  flex: 1;
   overflow-y: auto;
   background-color: #f9f9f9;
   display: flex;

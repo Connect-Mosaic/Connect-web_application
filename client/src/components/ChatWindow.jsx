@@ -16,8 +16,6 @@ function ChatWindow({ messages = [], activeUser }) {
       ) : (
         messages.map((msg, index) => {
           const sender = msg.sender;
-
-          // Is this message sent by the logged-in user?
           const isSent = sender?._id === activeUser._id;
 
           const senderName = sender
@@ -28,20 +26,12 @@ function ChatWindow({ messages = [], activeUser }) {
 
           const date = msg.timestamp ? new Date(msg.timestamp) : null;
           const timeString = date
-            ? date.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
+            ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
             : "";
 
           return (
-            <div
-              key={index}
-              className={`chat-message ${isSent ? "sent" : "received"}`}
-            >
-              {/* Avatar */}
+            <div key={index} className={`chat-message ${isSent ? "sent" : "received"}`}>
               <img src={avatar} alt="avatar" className="chat-avatar" />
-
               <div className="message-content">
                 <p>
                   <strong>{senderName}</strong>: {msg.text}

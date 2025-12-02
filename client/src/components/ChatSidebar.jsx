@@ -1,55 +1,47 @@
-import React, { useState } from "react";
+import React from "react";
 import "./ChatSidebar.css";
 
-function ChatSidebar({ onSelectUser, users = [], selectedUser, conversations = [] }) {
-  const [search, setSearch] = useState("");
-
-  const filteredUsers = users.filter((u) => {
-    const fullName = `${u.first_name} ${u.last_name}`.toLowerCase();
-    return fullName.includes(search.toLowerCase());
-  });
-
+function ChatSidebar({ conversations, selectedConversation, onSelectConversation }) {
   return (
-    <div className="sidebar-container">
-      {/* Search bar */}
-      <div className="sidebar-search">
-        <input
-          type="text"
-          placeholder="Search users..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
-      {/* User list */}
-      <div className="sidebar-users">
-        {filteredUsers.length > 0 ? (
-          filteredUsers.map((user) => (
-            <div
-              key={user._id}
-              className={`sidebar-user ${selectedUser?._id === user._id ? "active" : ""}`}
-              onClick={() => onSelectUser(user)}
-            >
-              {/* Full Name */}
-              {user.first_name} {user.last_name}
-
-              {/* Dot if conversation exists */}
-              {conversations.some((u) => u._id === user._id) && (
-                <span className="has-chat">•</span>
-              )}
-            </div>
-          ))
+    <div className="chat-sidebar-container">
+      <h3>Conversations</h3>
+      <ul className="conversation-list">
+        {conversations.length === 0 ? (
+          <li>No conversations yet</li>
         ) : (
-          <p>No users found</p>
-        )}
-      </div>
+          conversations.map((conv) => {
+            
+            // Pick the correct participant (not active user)
+            const participant = conv.members?.find(
+              (m) => m._id !== conv.ownerId  // or compare with logged user later
+            );
 
-      {/* Footer */}
-      <div className="sidebar-footer">
-        <button onClick={() => alert("Select a user to start a new chat!")}>
-          Start New Chat
-        </button>
-      </div>
+            const isSelected =
+              selectedConversation && selectedConversation._id === conv._id;
+
+            return (
+              <li
+                key={conv._id}
+                className={isSelected ? "selected" : ""}
+                onClick={() => onSelectConversation(conv)}
+              >
+                <div className="conversation-item">
+                  <span className="participant-name">
+                    {participant?.first_name} {participant?.last_name}
+                  </span>
+
+                  {conv.latestMessage && (
+                    <span className="latest-message">
+                      {conv.latestMessage.text.slice(0, 20)}
+                      {conv.latestMessage.text.length > 20 ? "..." : ""}
+                    </span>
+                  )}
+                </div>
+              </li>
+            );
+          })
+        )}
+      </ul>
     </div>
   );
 }
