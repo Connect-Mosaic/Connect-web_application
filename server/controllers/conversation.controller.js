@@ -63,7 +63,7 @@ const getUserConversations = async (req, res) => {
 
 const getConversationById = async (req, res) => {
     try {
-        const id = req.params.id;
+        const id = req.params.conversation_id;
         console.info('getConversationById called', { id });
 
         const conversation = await Conversation.findById(id);
@@ -83,7 +83,7 @@ const getConversationById = async (req, res) => {
 
 const updateConversation = async (req, res) => {
     try {
-        const id = req.params.id;
+        const id = req.params.conversation_id;
         console.info('updateConversation called', { id, updateFields: Object.keys(req.body) });
 
         const conversation = await Conversation.findById(id);
@@ -114,7 +114,7 @@ const updateConversation = async (req, res) => {
 
 const deleteConversation = async (req, res) => {
     try {
-        const id = req.params.id;
+        const id = req.params.conversation_id;
         console.info('deleteConversation called', { id });
 
         const deleted = await Conversation.findByIdAndDelete(id);

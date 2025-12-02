@@ -11,7 +11,6 @@ import adminRoutes from "./routes/admin.routes.js";
 import searchRoutes from "./routes/search.routes.js";
 import eventRoutes from "./routes/event.routes.js";
 import conversationRoutes from "./routes/conversation.routes.js";
-import messageRoutes from "./routes/message.routes.js";
 
 const app = express();
 app.use(
@@ -52,7 +51,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/conversations", conversationRoutes);
-app.use("/api/messages", messageRoutes);
+
 
 // Your health API
 app.get("/api/health", (req, res) => {

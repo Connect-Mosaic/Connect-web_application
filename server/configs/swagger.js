@@ -41,10 +41,6 @@ const options = {
                 description: "1-to-1 and group conversation APIs"
             },
             {
-                name: "Messages",
-                description: "Message sending, fetching, deleting, and read status"
-            },
-            {
                 name: "Events",
                 description: "Event listing, details, joining, and map coordinates"
             },

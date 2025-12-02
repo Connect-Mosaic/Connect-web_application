@@ -2,6 +2,7 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import { successResponse, errorResponse } from '../helpers/apiResponse.js';
+import { time } from "console";
 
 const sendMessage = async (req, res) => {
     console.log('sendMessage called', {
@@ -10,7 +11,8 @@ const sendMessage = async (req, res) => {
 
     try {
         const userId = req.auth.userId;
-        const { conversation_id, content } = req.body;
+        const conversation_id = req.params.conversation_id;
+        const { content } = req.body;
 
         const message = await Message.create({
             conversation_id,
@@ -48,7 +50,16 @@ const sendMessage = async (req, res) => {
         await conv.save();
         console.log('Unread counts updated', { conversation_id, unread_count: conv.unread_count });
 
-        res.json(successResponse("Message sent"));
+        const messageData = {
+            message_id: message._id,
+            conversation_id: message.conversation_id,
+            sender: message.sender,
+            content: message.content,
+            timestamp: message.timestamp,
+            been_read: message.read_by.length === 0 ? false : true,
+            edited: message.edited
+        };
+        res.json(successResponse("Message sent", messageData));
     } catch (err) {
         console.error('sendMessage error', err.stack || err);
         res.json(errorResponse(err.message));
@@ -71,7 +82,6 @@ const getMessages = async (req, res) => {
             conversation_id: msg.conversation_id,
             sender: msg.sender,
             content: msg.content,
-            reply_to: msg.reply_to,
             been_read: msg.read_by.length === 0 ? false : true,
             edited: msg.edited,
             timestamp: msg.timestamp
