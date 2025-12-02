@@ -1,10 +1,17 @@
 .chat-window {
   padding: 10px;
   border: 1px solid #ccc;
+  border-radius: 5px;
   height: 350px;
   width: 450px;
   overflow-y: auto;
   background-color: #f9f9f9;
+}
+
+.timestamp{
+  font-size: 0.7rem;
+  color: #555;
+  margin-top: 2px;
 }
 
 .chat-message {
