@@ -9,6 +9,17 @@ const create = async (req, res) => {
     try {
         const event = new Event(req.body);
         if (req.auth && req.auth.userId) event.organizer = req.auth.userId;
+        // If coordinates are not provided, attempt to geocode the location
+        if ((!event.coordinates || (event.coordinates.lat === undefined && event.coordinates.lng === undefined)) && event.location) {
+            try {
+                const coords = await geocodeAddress(event.location);
+                if (coords) {
+                    event.coordinates = { lat: coords.lat, lng: coords.lng };
+                }
+            } catch (geoErr) {
+                console.error('[Event:create] Geocoding failed for location "' + event.location + '":', geoErr);
+            }
+        }
         await event.save();
         return res.json(successResponse('Event created successfully', event));
     } catch (err) {
@@ -19,7 +30,7 @@ const create = async (req, res) => {
 
 const list = async (req, res) => {
     try {
-        const events = await Event.find().select("title location date startTime endTime organizer").populate('organizer', 'name email').exec();
+        const events = await Event.find().select("_id, title, location, date, startTime, endTime, organizer, interests, image, coordinates").populate('organizer', 'name email').exec();
         let responseList = events.map(event => ({
             id: event._id,
             title: event.title,
@@ -30,18 +41,21 @@ const list = async (req, res) => {
             organizer: event.organizer,
             interests: event.interests,
             image: event.image,
-            coordinates: event.coordinates ? { lat: event.coordinates.lat, lng: event.coordinates.lng } : null
+            coordinates: event.coordinates
         }));
 
         for (let event of responseList) {
             // check undifined or empty coordinates
+            console.log('[Event:list] Checking coordinates for event', { id: event.id }, event.coordinates, event.coordinates.lat === undefined, event.coordinates.lng === undefined);
             if (!event.coordinates || (event.coordinates.lat === undefined && event.coordinates.lng === undefined)) {
                 try {
-                    // const coords = await geocodeAddress(event.location);
-                    // event.coordinates = coords;
-                    // generate mock coordinates for testing 
-                    const coords = { lat: 43.6532 + Math.random() * 0.1, lng: -79.3832 + Math.random() * 0.1 };
-                    event.coordinates = coords;
+                    const coords = await geocodeAddress(event.location);
+                    if (coords) {
+                        event.coordinates = { lat: coords.lat, lng: coords.lng };
+                    }
+                    // save updated coordinates to the database
+                    console.log(`[Event:list] Geocoded coordinates for event ${event.id} at location "${event.location}"`, coords);
+                    await Event.findByIdAndUpdate(event.id, { coordinates: event.coordinates });
                 } catch (geoErr) {
                     console.error(`[Event:list] Geocoding failed for location "${event.location}":`, geoErr);
                 }
@@ -181,16 +195,12 @@ const searchEvents = async (req, res) => {
             if (!hasCoords) {
                 try {
                     console.log(`[Event:searchEvents] Event ${event._id} missing coordinates. Location: "${event.location}"`);
-                    // const coords = await geocodeAddress(event.location);
-                    // if (coords) {
-                    //     event.coordinates = { lat: coords.lat, lng: coords.lng };
-                    //     await event.save();
-                    // }
-
-                    // generate mock coordinates for testing
-                    const coords = { lat: 43.6532 + Math.random() * 0.1, lng: -79.3832 + Math.random() * 0.1 };
-                    event.coordinates = coords;
-                    console.log(`[Event:searchEvents] Saved mock coordinates for event ${event._id}`, coords);
+                    const coords = await geocodeAddress(event.location);
+                    if (coords) {
+                        event.coordinates = { lat: coords.lat, lng: coords.lng };
+                        await event.save();
+                    }
+                    console.log(`[Event:searchEvents] Saved coordinates for event ${event._id}`, coords);
                 } catch (geoErr) {
                     console.error(`[Event:searchEvents] Geocoding/save failed for location "${event.location}" (event ${event._id}):`, geoErr);
                 }

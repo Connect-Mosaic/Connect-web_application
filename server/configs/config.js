@@ -9,7 +9,7 @@ const config = {
         'mongodb://' + (safeEnv('IP') || 'localhost') + ':' +
         (safeEnv('MONGO_PORT') || '27017') +
         '/mernproject',
-    googleClientId: safeEnv('GOOGLE_CLIENT_ID') || "641014738117-1ro2oeiciq0be6h1qfjgdvoggp97eiks.apps.googleusercontent.com",
+    mapboxToken: safeEnv('MAPBOX_TOKEN') || "pk.eyJ1IjoiaGVsbG93b3JkMTIzMzQiLCJhIjoiY21pb3l0bmFtMDd3NzNnb25zdDI5NjhjeiJ9.uRlcvngNM0EnSwZXMEEq9Q"
 }
 
 if (config.env === 'production' && (!config.jwtSecret || !config.mongoUri)) {

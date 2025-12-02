@@ -1,11 +1,12 @@
 // helpers/geocode.js
 import fetch from "node-fetch";
+import config from "../configs/config.js";
 
 export async function geocodeAddress(address) {
     console.log("[geocodeAddress] called with address:", address);
 
     try {
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${process.env.MAPBOX_TOKEN}`;
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${config.mapboxToken}`;
         const safeUrl = url.replace(/access_token=[^&]+/, "access_token=[REDACTED]");
         console.debug("[geocodeAddress] Request URL:", safeUrl);
 
