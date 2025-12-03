@@ -48,7 +48,7 @@ function App() {
           </MainLayout>
         } />
 
-        <Route path="/chat" element={
+        <Route path="/chat/:conversationId?" element={
           <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
             <ChatPage />
           </MainLayout>
