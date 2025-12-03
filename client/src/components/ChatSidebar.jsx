@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import * as api from "../apis/conversation.js";
 
 // Example static users list; in a real app, you might fetch this from API
 const users = [
@@ -8,7 +9,14 @@ const users = [
   { id: "3", name: "User 3" },
 ];
 
+
+
 function ChatSidebar() {
+  useEffect(async () => {
+    // fetch conversations 
+    const fetchConversations = await api.getUserConversations();
+    console.log(fetchConversations);
+  }, []);
   return (
     <div className="chat-sidebar" style={{ width: "250px", borderRight: "1px solid #ccc", padding: "10px" }}>
       <h3>Contacts</h3>
