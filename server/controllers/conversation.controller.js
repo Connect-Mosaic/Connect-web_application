@@ -2,6 +2,8 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import { successResponse, errorResponse } from '../helpers/apiResponse.js';
+import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
 
 const createConversation = async (req, res) => {
     try {
@@ -14,6 +16,7 @@ const createConversation = async (req, res) => {
         });
 
         //add the creator as a participant if not already included
+        const user = await User.findById(userId);
         if (!participants.includes(userId)) {
             participants.push(userId);
         }
@@ -25,6 +28,19 @@ const createConversation = async (req, res) => {
             display_name: display_name
         });
 
+        // Notify participants about the new friendship/conversation
+        for (const participantId of participants) {
+            if (participantId === userId) continue; // Skip notifying self
+            const notification = new Notification({
+                userId: participantId,
+                title: 'New Conversation',
+                message: `You have been added to a new conversation by user ${user.first_name}.`,
+                type: 'info',
+                isRead: false
+            });
+            await notification.save();
+            console.info('Notification created for participant', { participantId, conversationId: conversation._id });
+        }
 
         console.info('createConversation success', { conversationId: conversation._id });
         res.json(successResponse("Conversation created successfully", { conversationId: conversation._id }));

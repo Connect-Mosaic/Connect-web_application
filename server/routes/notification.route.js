@@ -84,6 +84,31 @@ router.post("/", authCtrl.requireSignin, notificationController.createNotificati
  *         description: Unauthorized - Bearer token missing or invalid
  */
 router.get("/", authCtrl.requireSignin, notificationController.getNotifications);
+
+/**
+ * @swagger
+ * /api/notifications/mark-all-read:
+ *   put:
+ *     summary: Mark all notifications as read
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Notification mark all read successful
+ *         content:
+ *           application/json:
+ *             examples:
+ *               success:
+ *                 value:
+ *                   success: true
+ *                   message: "Notification mark all read successful"
+ *                   data: null
+ *       401:
+ *         description: Unauthorized - Bearer token missing or invalid
+ */
+router.put("/mark-all-read", authCtrl.requireSignin, notificationController.markAllRead);
 /**
  * @swagger
  * /api/notifications/{notification_id}:
@@ -170,7 +195,8 @@ router.get("/:notification_id", authCtrl.requireSignin, notificationController.g
  *         description: Notification not found
  */
 router.put("/:notification_id/read", authCtrl.requireSignin, notificationController.markAsRead);
-router.put("/mark-all-read", authCtrl.requireSignin, notificationController.markAllRead);
+
+
 /**
  * @swagger
  * /api/notifications/{notification_id}:
@@ -205,5 +231,8 @@ router.put("/mark-all-read", authCtrl.requireSignin, notificationController.mark
  *         description: Notification not found
  */
 router.delete("/:notification_id", authCtrl.requireSignin, notificationController.deleteNotification);
+
+
+
 
 export default router;

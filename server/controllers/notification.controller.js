@@ -91,8 +91,8 @@ const markAllRead = async (req, res) => {
     try {
         const userId = req.auth.userId;
         const result = await Notification.updateMany(
-            { user: userId, read: false },
-            { $set: { read: true } }
+            { userId: userId, isRead: false },
+            { $set: { isRead: true } }
         ).exec();
 
         return res.json(successResponse('All notifications marked as read', { modifiedCount: result.nModified ?? result.modifiedCount }));

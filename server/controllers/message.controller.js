@@ -2,7 +2,7 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import { successResponse, errorResponse } from '../helpers/apiResponse.js';
-import { time } from "console";
+import Notification from "../models/notification.model.js";
 
 const sendMessage = async (req, res) => {
     console.log('sendMessage called', {
@@ -49,6 +49,21 @@ const sendMessage = async (req, res) => {
         conv.unread_count = unreadMap;
         await conv.save();
         console.log('Unread counts updated', { conversation_id, unread_count: conv.unread_count });
+
+        // Notify participants about the new message
+        for (let participant of conv.participants) {
+            const participantId = participant.user_id.toString();
+            if (participantId === userId) continue;
+            const notification = new Notification({
+                userId: participantId,
+                title: "New Message",
+                message: `You have a new message in conversation ${conv.display_name || "Unnamed Conversation"}.`,
+                type: "info",
+                isRead: false
+            });
+            await notification.save();
+            console.log('Notification created for participant', { participantId, conversationId: conversation_id });
+        }
 
         const messageData = {
             message_id: message._id,
