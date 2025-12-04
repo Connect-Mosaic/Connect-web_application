@@ -1,77 +1,308 @@
-/* ====== Main Search Page Container ====== */
+/* ===== Main Search Page Container ===== */
 .search-page {
-  padding: 20px;
+  padding: 24px 20px 40px;
   margin: 0 auto;
-  max-width: 900px;
-  background: #ffffff; /* Main content background (white) */
+  max-width: 1200px;
 }
 
-/* ====== Header Section Background ====== */
-.search-page h3 {
-  background: #d9d1f2; /* Light purple header background */
-  padding: 40px 20px;
-  border-radius: 12px;
+/* ===== Header Section (purple container) ===== */
+.search-header {
+  background: #d9d1f2;
+  padding: 32px 28px 26px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.search-title {
   font-size: 32px;
-  margin-bottom: 20px;
-  text-align: center; /* Center title text */
+  font-weight: 600;
+  margin: 0;
 }
 
-/* ====== Search Input Field ====== */
-.search-input {
-  width: 100%;
-  padding: 14px;
-  border-radius: 30px; /* Rounded search bar */
-  border: 1px solid #ccc;
-  margin-bottom: 25px;
-  font-size: 16px;
-}
-
-/* ====== People Section Background (Light Gray) ====== */
-.results-section {
-  background: #f0f0f0; /* Light gray background to group results */
-  padding: 20px;
-  border-radius: 12px;
-  margin-top: 20px;
-}
-
-/* ====== Result Card (Light Purple Background) ====== */
-.search-result-card {
+/* Search bar row (input + button) */
+.search-bar-row {
   display: flex;
   align-items: center;
-  padding: 1.2rem;
-  border-radius: 12px;
-  background: #EBE7FC; /* Light purple card background */
-  margin-bottom: 0.8rem;
+  gap: 10px;
+  margin-top: 16px;
+  max-width: 480px;
+}
+
+/* Elliptical search input like the wireframe */
+.search-bar-input {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid #111;
+  font-size: 15px;
+  background: #ffffff;
+  outline: none;
+}
+
+/* Dark rounded search button */
+.search-bar-button {
+  padding: 9px 20px;
+  background: #333;
+  color: #ffffff;
+  border-radius: 999px;
+  border: none;
   cursor: pointer;
-
-  transition: 0.2s ease; /* Smooth hover animation */
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s ease;
 }
 
-/* Hover effect to lift card slightly */
-.search-result-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+.search-bar-button:hover {
+  background: #555;
 }
 
-/* ====== User Avatar (Purple Circle) ====== */
-.result-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%; /* Circle shape */
-  background: #C5B6F7; /* Purple background for avatar */
-  margin-right: 15px;
-}
-
-/* ====== User Name ====== */
-.result-title {
-  font-size: 1.2rem;
-  font-weight: 600;
+/* Small text under search bar: "Showing X results..." */
+.search-summary {
+  margin-top: 10px;
+  font-size: 14px;
   color: #333;
 }
 
-/* ====== User Email, Program, Location, Interests ====== */
+.search-summary-query {
+  font-weight: 500;
+}
+
+/* ===== Results Container (overall white block) ===== */
+.result-container {
+  background: #f5f5f7;
+  border-radius: 18px;
+  padding: 22px 22px 26px;
+}
+
+/* When nothing searched yet */
+.no-query {
+  text-align: center;
+  margin: 16px 0;
+}
+
+/* ===== Grid of People / Events columns ===== */
+.search-content {
+  width: 100%;
+}
+
+.search-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+/* Left / right column containers */
+.search-column {
+  background: #f0f0f0;
+  border-radius: 14px;
+  padding: 18px 18px 20px;
+}
+
+.column-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.column-subtitle {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 12px;
+}
+
+/* List of cards within a column */
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Empty text inside a column */
+.empty-text {
+  font-size: 13px;
+  color: #777;
+  margin-top: 6px;
+}
+
+/* ====== Result Card (light purple background) ====== */
+.search-result-card {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ebe7fc; 
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.search-result-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== NEW: Two-container layout ===== */
+.result-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  gap: 15px;
+}
+
+/* LEFT: icon + main info */
+.result-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 65%;
+  flex: 1;
+}
+
+/* Icon container */
+.result-icon-container {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Bootstrap placeholder icon */
+.result-profile-placeholder {
+  font-size: 36px;
+  color: #6c63ff;
+}
+
+/* Actual profile image */
+.result-profile-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Main text group */
+.result-main-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* RIGHT: interests/tags */
+.result-extra-container {
+  display: flex;
+  align-items: center;
+}
+
+.result-interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Tag style */
+.interest-chip {
+  background: #fbfaff;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #4741a0;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+/* Card text */
+.result-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px;
+}
+
 .result-subtitle,
 .result-detail {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #555;
+  margin: 0;
+}
+
+/* Loading text */
+.search-loading {
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* Generic "no results" under whole container (fallback) */
+.no-results {
+  font-size: 14px;
+  color: #555;
+}
+
+/* Extra chip container */
+.interest-more-chip {
+  position: relative;
+  background: #ece9ff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #4a44a0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Tooltip container */
+.interest-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 42px;
+  right: 0;
+  background: white;
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+  z-index: 1;
+  min-width: 160px;
+}
+
+/* Tooltip visible on hover */
+.interest-more-chip:hover .interest-tooltip {
+  display: block;
+  z-index: 2;
+}
+
+/* Individual tooltip items */
+.tooltip-item {
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #eee;
+}
+
+.tooltip-item:last-child {
+  border-bottom: none;
+}
+
+/* Smooth fade animation (optional) */
+.interest-tooltip {
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ===== Responsive: stack columns on smaller screens ===== */
+@media (max-width: 900px) {
+  .search-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .search-bar-row {
+    max-width: 100%;
+  }
 }
