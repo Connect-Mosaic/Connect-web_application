@@ -7,48 +7,56 @@ function SearchPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState({ users: [], events: [] });
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Get search query from URL on component mount
+  /* ----------------------------------------
+     Load query from URL on mount ONLY (DO NOT SEARCH automatically)
+  ---------------------------------------- */
   useEffect(() => {
     const urlQuery = searchParams.get("q");
     if (urlQuery) {
       setQuery(urlQuery);
-      performSearch(urlQuery);
+      // Do NOT call performSearch here
     }
   }, []);
 
-  // Handle search when query changes (with debounce)
-  useEffect(() => {
-    if (query.trim()) {
-      const searchTimer = setTimeout(() => {
-        performSearch(query);
-        setSearchParams({ q: query });
-      }, 500);
-
-      return () => clearTimeout(searchTimer);
-    } else {
-      setResults({ users: [], events: [] });
+  /* ----------------------------------------
+     Handle pressing Enter
+  ---------------------------------------- */
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      performSearch(query);
     }
-  }, [query]);
+  };
 
+  /* ----------------------------------------
+     Perform Search ONLY when manually called
+  ---------------------------------------- */
   const performSearch = async (searchQuery) => {
-    if (!searchQuery.trim()) {
+    const trimmed = searchQuery.trim();
+
+    // Mark that the user intentionally searched
+    setHasSearched(true);
+
+    // Update URL
+    setSearchParams({ q: trimmed });
+
+    // If empty search → clear results
+    if (!trimmed) {
       setResults({ users: [], events: [] });
       return;
     }
 
     setLoading(true);
+
     try {
-      const data = await api.get(
-        `/api/search?q=${encodeURIComponent(searchQuery)}`
-      );
+      const data = await api.get(`/api/search?q=${encodeURIComponent(trimmed)}`);
 
       if (data.success) {
         setResults(data.data || { users: [], events: [] });
       } else {
-        console.error("Search failed:", data.message);
         setResults({ users: [], events: [] });
       }
     } catch (error) {
@@ -59,38 +67,34 @@ function SearchPage() {
     }
   };
 
-  const handleSearchChange = (e) => {
-    setQuery(e.target.value);
-  };
+  /* ----------------------------------------
+     Format Helpers
+  ---------------------------------------- */
+  const handleSearchChange = (e) => setQuery(e.target.value);
 
-  const handleUserClick = (user) => {
-    navigate(`/profile/${user._id}`);
-  };
+  const handleUserClick = (user) => navigate(`/profile/${user._id}`);
+  const handleEventClick = (event) => navigate(`/events/${event._id}`);
 
-  const handleEventClick = (event) => {
-    navigate(`/events/${event._id}`);
-  };
+  const formatDate = (date) =>
+    new Date(date).toLocaleDateString();
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatTime = (timeString) => {
-    return new Date(`1970-01-01T${timeString}`).toLocaleTimeString([], {
+  const formatTime = (time) =>
+    new Date(`1970-01-01T${time}`).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
-  const getUserFullName = (user) => {
-    return `${user.first_name || ""} ${user.last_name || ""}`.trim();
-  };
+  const getUserFullName = (u) =>
+    `${u.first_name || ""} ${u.last_name || ""}`.trim();
 
   const totalResults = results.users.length + results.events.length;
 
+  /* ======================================================================
+     RENDER
+  ====================================================================== */
   return (
     <div className="search-page">
-      {/* ===== Header container (purple) ===== */}
+      {/* ================= HEADER ================= */}
       <div className="search-header">
         <h3 className="search-title">Search Results</h3>
 
@@ -101,6 +105,7 @@ function SearchPage() {
             placeholder="Search Students or Events..."
             value={query}
             onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
           />
           <button
             className="search-bar-button"
@@ -111,7 +116,7 @@ function SearchPage() {
           </button>
         </div>
 
-        {query && (
+        {hasSearched && (
           <p className="search-summary">
             Showing <strong>{totalResults}</strong> results for{" "}
             <span className="search-summary-query">"{query}"</span>
@@ -119,11 +124,11 @@ function SearchPage() {
         )}
       </div>
 
-      {/* ===== Results container (white, two columns) ===== */}
+      {/* ================= RESULTS CONTAINER ================= */}
       <div className="result-container">
         {loading ? (
           <p className="search-loading">Searching...</p>
-        ) : !query ? (
+        ) : !hasSearched ? (
           <p className="no-results no-query">
             Enter a search term to find users and events...
           </p>
@@ -131,7 +136,7 @@ function SearchPage() {
           <>
             <div className="search-content">
               <div className="search-columns">
-                {/* === People column === */}
+                {/* ================= PEOPLE COLUMN ================= */}
                 <section className="search-column">
                   <h4 className="column-title">People</h4>
                   <p className="column-subtitle">
@@ -146,14 +151,14 @@ function SearchPage() {
                           className="search-result-card"
                           onClick={() => handleUserClick(user)}
                         >
-                          <div className="result-content">  
-                            {/* LEFT — Profile Icon + Main Info */}
+                          <div className="result-content">
+                            {/* LEFT SIDE */}
                             <div className="result-left">
                               <div className="result-icon-container">
                                 {user.profileImage ? (
-                                  <img 
-                                    src={user.profileImage} 
-                                    alt="profile" 
+                                  <img
+                                    src={user.profileImage}
+                                    alt="profile"
                                     className="result-profile-image"
                                   />
                                 ) : (
@@ -168,41 +173,50 @@ function SearchPage() {
 
                                 {user.email && (
                                   <p className="result-subtitle">
-                                    <i className="bi bi-envelope"></i> {user.email}
+                                    <i className="bi bi-envelope"></i>{" "}
+                                    {user.email}
                                   </p>
                                 )}
 
                                 {user.university && (
                                   <p className="result-detail">
-                                    <i className="bi bi-mortarboard"></i> {user.university}
+                                    <i className="bi bi-mortarboard"></i>{" "}
+                                    {user.university}
                                   </p>
                                 )}
 
                                 {user.program && (
                                   <p className="result-detail">
-                                    <i className="bi bi-journal-code"></i> {user.program}
+                                    <i className="bi bi-journal-code"></i>{" "}
+                                    {user.program}
                                   </p>
                                 )}
 
                                 {user.location && (
                                   <p className="result-detail">
-                                    <i className="bi bi-geo-alt"></i> {user.location}
+                                    <i className="bi bi-geo-alt"></i>{" "}
+                                    {user.location}
                                   </p>
                                 )}
                               </div>
                             </div>
 
-                            {/* RIGHT — Interest Tags */}
+                            {/* RIGHT SIDE — Interests */}
                             <div className="result-extra-container">
+                              <button className="action-btn message-btn">
+                                <i className="bi bi-chat-dots"></i>
+                              </button>
+
                               {user.interests?.length > 0 && (
                                 <div className="result-interests">
-
-                                  {/* Show first 3 interests */}
+                                  {/* first 3 */}
                                   {user.interests.slice(0, 3).map((int, i) => (
-                                    <span key={i} className="interest-chip">{int}</span>
+                                    <span key={i} className="interest-chip">
+                                      {int}
+                                    </span>
                                   ))}
 
-                                  {/* If the user has more than 3 interests, show "+N" chip */}
+                                  {/* More */}
                                   {user.interests.length > 3 && (
                                     <div className="interest-more-chip">
                                       <i className="bi bi-plus-circle"></i>
@@ -210,11 +224,17 @@ function SearchPage() {
                                         +{user.interests.length - 3}
                                       </span>
 
-                                      {/* Tooltip showing remaining interests */}
                                       <div className="interest-tooltip">
-                                        {user.interests.slice(3).map((extra, i) => (
-                                          <div key={i} className="tooltip-item">{extra}</div>
-                                        ))}
+                                        {user.interests
+                                          .slice(3)
+                                          .map((extra, i) => (
+                                            <div
+                                              key={i}
+                                              className="tooltip-item"
+                                            >
+                                              {extra}
+                                            </div>
+                                          ))}
                                       </div>
                                     </div>
                                   )}
@@ -230,7 +250,7 @@ function SearchPage() {
                   )}
                 </section>
 
-                {/* === Events column === */}
+                {/* ================= EVENTS COLUMN ================= */}
                 <section className="search-column">
                   <h4 className="column-title">Events</h4>
                   <p className="column-subtitle">
@@ -245,8 +265,8 @@ function SearchPage() {
                           className="search-result-card"
                           onClick={() => handleEventClick(event)}
                         >
-                          <div className="result-content">  
-                            {/* LEFT — Icon + Main Details */}
+                          <div className="result-content">
+                            {/* LEFT */}
                             <div className="result-left">
                               <div className="result-icon-container">
                                 <i className="bi bi-calendar-event result-profile-placeholder"></i>
@@ -257,43 +277,59 @@ function SearchPage() {
 
                                 {event.date && (
                                   <p className="result-subtitle">
-                                    <i className="bi bi-calendar2-week"></i> {formatDate(event.date)}
-                                    {event.startTime && ` • ${formatTime(event.startTime)}`}
-                                    {event.endTime && ` - ${formatTime(event.endTime)}`}
+                                    <i className="bi bi-calendar2-week"></i>{" "}
+                                    {formatDate(event.date)}
+                                    {event.startTime &&
+                                      ` • ${formatTime(event.startTime)}`}
+                                    {event.endTime &&
+                                      ` - ${formatTime(event.endTime)}`}
                                   </p>
                                 )}
 
                                 {event.location && (
                                   <p className="result-detail">
-                                    <i className="bi bi-geo-alt"></i> {event.location}
+                                    <i className="bi bi-geo-alt"></i>{" "}
+                                    {event.location}
                                   </p>
                                 )}
                               </div>
                             </div>
 
-                            {/* RIGHT — Tags / Interests */}
+                            {/* RIGHT — Interests */}
                             <div className="result-extra-container">
+                              <button className="action-btn join-btn">
+                                <i className="bi bi-plus-circle"></i>
+                              </button>
+
                               {event.interests?.length > 0 && (
                                 <div className="result-interests">
+                                  {event.interests
+                                    .slice(0, 3)
+                                    .map((int, i) => (
+                                      <span key={i} className="interest-chip">
+                                        {int}
+                                      </span>
+                                    ))}
 
-                                  {/* Visible chips (max 3) */}
-                                  {event.interests.slice(0, 3).map((int, i) => (
-                                    <span key={i} className="interest-chip">{int}</span>
-                                  ))}
-
-                                  {/* Extra chip if there are more than 3 */}
                                   {event.interests.length > 3 && (
                                     <div className="interest-more-chip">
                                       <i className="bi bi-plus-circle"></i>
                                       <span className="more-count">
-                                        +{event.interests.length - 3}
+                                        +
+                                        {event.interests.length - 3}
                                       </span>
 
-                                      {/* Tooltip on hover */}
                                       <div className="interest-tooltip">
-                                        {event.interests.slice(3).map((extra, i) => (
-                                          <div key={i} className="tooltip-item">{extra}</div>
-                                        ))}
+                                        {event.interests
+                                          .slice(3)
+                                          .map((extra, i) => (
+                                            <div
+                                              key={i}
+                                              className="tooltip-item"
+                                            >
+                                              {extra}
+                                            </div>
+                                          ))}
                                       </div>
                                     </div>
                                   )}
