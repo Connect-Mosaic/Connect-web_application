@@ -8,26 +8,26 @@
   align-items: center;
   padding: 1rem 2rem;
   background-color: #f8f9fa; /* Light gray background */
-  color: #333; /* Dark text for contrast */
+  color: #333; /* Dark text */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   flex-wrap: wrap;
 }
 
-/* Logo / Brand section */
+/* Logo / Brand */
 .navbar-brand h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: bold;
-  color: #222; 
+  color: #222;
 }
 
 /* ======================================
    Search Bar
    ====================================== */
 .navbar-search {
-  flex: none;         
-  width: 350px;        
-  margin-left: 0;      
+  flex: none;
+  width: 350px;
+  margin-left: 0;
 }
 
 .search-input {
@@ -38,14 +38,41 @@
   outline: none;
 }
 
-/* Navigation links section */
-.navbar-links {
+/* Navigation Links Section */
+
+/* Grouping: center links + right icons */
+/* 3-column layout */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* left & right stay in natural flow */
+  position: relative; /* needed for absolute centering */
+}
+
+/* LEFT */
+.navbar-left {
+  flex: 1;
+}
+
+/* CENTER — truly centered independent of left/right widths */
+.navbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 2rem;
   align-items: center;
-  position: relative;  /* Needed for absolute centering */
-  flex: 0.75;             /* Let this area stretch */
 }
+
+/* RIGHT */
+.navbar-right {
+  flex: 1; 
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.5rem;
+}
+
+
 
 /* Link text */
 .nav-link {
@@ -56,9 +83,8 @@
   transition: color 0.3s, transform 0.2s;
 }
 
-/* Hover effect for links */
 .nav-link:hover {
-  color: #666; /* Softer gray on hover */
+  color: #666;
   transform: translateY(-1px);
 }
 
@@ -70,12 +96,22 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background-color: #000; /* Black underline for active link */
+  background-color: #000;
   border-radius: 2px;
 }
 
-/* Settings icon button (gear) */
-.settings-btn {
+/* =======================================
+   🔔 NOTIFICATION BELL & DROPDOWN
+   ======================================= */
+
+.notification-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.notification-btn {
+  position: relative;
   background-color: #e9ecef;
   border: none;
   border-radius: 50%;
@@ -86,53 +122,98 @@
   align-items: center;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
-  margin-left: auto;
 }
 
-.settings-btn:hover {
+.notification-btn:hover {
   background-color: #d6d8db;
 }
 
-/* Gear icon inside button */
-.settings-btn i {
+.notification-btn i {
   font-size: 1.2rem;
   color: #333;
 }
 
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  .navbar {
-    padding: 1rem;
-    flex-wrap: wrap;
-  }
+/* 🔴 Red Unread Badge */
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  background-color: #dc3545;
+  color: white;
+  font-size: 0.55rem;
+  font-weight: bold;
 
-  /* Search bar */
-  .navbar-search {
-    order: 3;
-    margin: 1rem 0 0 0;
-    max-width: 100%;
-  }
+  width: 17px;
+  height: 17px;
 
-  .navbar-links {
-    gap: 1rem;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  .logout-link {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+
+/* Dropdown menu */
+.notification-dropdown {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 260px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 0;
+  z-index: 1000;
+  animation: dropdownFade 0.15s ease-out;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Individual notification item */
+.notification-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f1f1;
   cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.notification-item:hover {
+  background-color: #f8f9fa;
+}
+
+.notification-item p {
+  margin: 0;
+  font-size: 0.9rem;
   color: #333;
 }
 
-.logout-link:hover {
-  color: #666;
-  transform: translateY(-1px);
-}
+.notif-time {
+  font-size: 0.75rem;
+  color: #777;
 }
 
-/* Admin Link Styling */
+/* Empty state */
+.notification-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #666;
+}
+
+/* =======================================
+   Admin Link Styling
+   ======================================= */
+
 .admin-link {
   color: #dc3545 !important;
   font-weight: 600;
@@ -159,14 +240,52 @@
   margin-left: 2px;
 }
 
-/* Hide text on smaller screens, show only icon */
+/* Hide text on smaller screens */
 @media (max-width: 768px) {
   .admin-text {
     display: none;
   }
-  
+
   .admin-link i {
     font-size: 1.2em;
   }
 }
 
+/* =======================================
+   Logout button styling
+   ======================================= */
+
+.logout-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: #333;
+}
+
+.logout-link:hover {
+  color: #666;
+  transform: translateY(-1px);
+}
+
+/* =======================================
+   Mobile Responsiveness
+   ======================================= */
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .navbar-search {
+    order: 3;
+    margin-top: 1rem;
+    width: 100%;
+  }
+
+  .navbar-links {
+    gap: 1rem;
+  }
+}
