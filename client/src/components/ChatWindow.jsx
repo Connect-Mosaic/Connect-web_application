@@ -1,67 +1,44 @@
-import React, { useRef, useEffect } from "react";
+import React from "react";
 
-function ChatWindow({ messages, usersMap, userId, onRetry }) {
-  const messagesEndRef = useRef(null);
-
-  // Auto-scroll to bottom whenever messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+function ChatWindow({ messages, usersMap, userId }) {
+  const safeMessages = Array.isArray(messages) ? messages : [];
 
   return (
-    <div
-      className="chat-window"
-      style={{ flex: 1, padding: "10px", overflowY: "auto", height: "400px" }}
-    >
-      {messages.map((msg) => {
-        const isSentByUser = msg.sender === userId;
-        const isFailed = msg.failed;
+    <div className="chat-window" style={{ flex: 1, overflowY: "auto", padding: "10px" }}>
+      {safeMessages.length === 0 && (
+        <div style={{ textAlign: "center", marginTop: "20px", color: "#999" }}>
+          No messages yet
+        </div>
+      )}
+
+      {safeMessages.map((msg, index) => {
+        // Unique key: server message_id > temp_id > fallback
+        const key = msg.message_id || msg.temp_id || `msg-${Date.now()}-${Math.random()}-${index}`;
+
+        const senderName = usersMap[msg.sender] || (msg.sender === userId ? "You" : `User ${msg.sender}`);
 
         return (
           <div
-            key={msg.message_id || msg.temp_id}
-            className={`chat-message ${isSentByUser ? "sent" : "received"}`}
+            key={key}
+            className={`message ${msg.sender === userId ? "own-message" : "other-message"}`}
             style={{
-              marginBottom: "8px",
-              padding: "5px",
-              backgroundColor: isFailed ? "#f8d7da" : isSentByUser ? "#dcf8c6" : "#fff",
-              borderRadius: "5px",
-              position: "relative",
+              marginBottom: "10px",
+              padding: "8px",
+              borderRadius: "6px",
+              backgroundColor: msg.sender === userId ? "#DCF8C6" : "#F1F0F0",
+              alignSelf: msg.sender === userId ? "flex-end" : "flex-start",
+              maxWidth: "70%",
             }}
           >
-            <p style={{ margin: 0 }}>
-              <strong>{isSentByUser ? "You" : usersMap[msg.sender] || "User"}:</strong>{" "}
-              {msg.content}
-              <span
-                style={{ float: "right", fontSize: "0.7em", color: "#555" }}
-              >
-                {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            </p>
-
-            {/* Retry button for failed messages */}
-            {isFailed && isSentByUser && (
-              <button
-                style={{
-                  position: "absolute",
-                  right: "5px",
-                  bottom: "-20px",
-                  backgroundColor: "#dc3545",
-                  color: "#fff",
-                  border: "none",
-                  padding: "2px 5px",
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                }}
-                onClick={() => onRetry(msg)}
-              >
-                Retry
-              </button>
-            )}
+            <div style={{ fontSize: "12px", color: "#555", marginBottom: "4px" }}>
+              {senderName}
+            </div>
+            <div>{msg.content}</div>
+            {msg.edited && <div style={{ fontSize: "10px", color: "#999" }}>(edited)</div>}
+            {msg.failed && <div style={{ fontSize: "10px", color: "red" }}>(failed)</div>}
           </div>
         );
       })}
-      <div ref={messagesEndRef} />
     </div>
   );
 }
