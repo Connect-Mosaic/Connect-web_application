@@ -1,31 +1,37 @@
 /// <reference types="vite/client" />
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''; // from .env or proxy
 
+// ⭐ Universal file URL helper
+export function fileURL(path) {
+    if (!path) return "";
+    if (path.startsWith("http")) return path; 
+    return `${BASE_URL}${path}`;
+}
+
 // 🔧 Universal request wrapper
 async function request(path, options = {}) {
-    // Get token from sessionStorage
+    // Get token from localStorage
     let token = '';
     const stored = localStorage.getItem('jwt');
 
     if (stored) {
         try {
-            // If login saved { token, user }
             const parsed = JSON.parse(stored);
 
             if (typeof parsed === 'string') {
-                token = parsed; // raw token string
+                token = parsed;
             } else if (parsed.token) {
                 token = parsed.token;
             }
         } catch {
-            token = stored; // raw token
+            token = stored;
         }
     }
 
-
-    // Set up headers
+    // Setup headers
     const headers = new Headers(options.headers);
-    // If body is FormData → let browser set correct multipart headers
+
+    // Only JSON if not FormData
     if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) {
         headers.set('Content-Type', 'application/json');
     }
@@ -40,7 +46,7 @@ async function request(path, options = {}) {
         headers,
     });
 
-    // Try to parse JSON response
+    // Try JSON
     let responseBody;
     try {
         responseBody = await res.json();
@@ -59,13 +65,11 @@ export const api = {
     patch: (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body ?? {}) }),
     delete: (path) => request(path, { method: 'DELETE' }),
 
-    // NEW — for file uploads
+    // File upload shortcut
     formPost: (path, formData) =>
         request(path, {
             method: 'POST',
             body: formData,
-            headers: { /* DON'T set Content-Type — browser will set multipart boundary */ }
+            headers: {}
         }),
 };
-
-

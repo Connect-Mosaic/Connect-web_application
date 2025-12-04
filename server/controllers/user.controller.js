@@ -1,39 +1,43 @@
 import User from "../models/user.model.js";
-import extend from "lodash/extend.js";
 import errorHandler from "./error.controller.js";
-import { successResponse, errorResponse } from '../helpers/apiResponse.js';
+import { successResponse, errorResponse } from "../helpers/apiResponse.js";
 
+/* ============================================================
+   CREATE USER
+============================================================ */
 const create = async (req, res) => {
   const user = new User(req.body);
   try {
     await user.save();
-    return res.json(successResponse('User created successfully', user));
+    return res.json(successResponse("User created successfully", user));
   } catch (err) {
     return res.json(errorResponse(errorHandler.getErrorMessage(err)));
   }
 };
 
-/* --------------------------
+/* ============================================================
    LIST USERS
--------------------------- */
+============================================================ */
 const list = async (req, res) => {
   try {
-    let users = await User.find().select("name email updated created");
-    res.json(successResponse('Users retrieved successfully', users));
+    const users = await User.find().select(
+      "first_name last_name email createdAt updatedAt"
+    );
+    return res.json(successResponse("Users retrieved successfully", users));
   } catch (err) {
     return res.json(errorResponse(errorHandler.getErrorMessage(err)));
   }
 };
 
-/* --------------------------
+/* ============================================================
    PARAM: LOAD USER BY ID
--------------------------- */
+============================================================ */
 const userByID = async (req, res, next, id) => {
   try {
-    let user = await User.findById(id);
-    if (!user) {
-      return res.json(errorResponse("User not found"));
-    }
+    const user = await User.findById(id);
+
+    if (!user) return res.json(errorResponse("User not found"));
+
     req.profile = user;
     next();
   } catch (err) {
@@ -41,95 +45,98 @@ const userByID = async (req, res, next, id) => {
   }
 };
 
-/* --------------------------
-   READ USER (hide password fields)
--------------------------- */
+/* ============================================================
+   READ USER
+============================================================ */
 const read = (req, res) => {
   req.profile.hashed_password = undefined;
   req.profile.salt = undefined;
   return res.json(req.profile);
 };
 
-/* --------------------------
+/* ============================================================
    UPDATE USER
--------------------------- */
+============================================================ */
 const update = async (req, res) => {
   try {
-    console.log('[User] update called for user id:', req.profile._id);
-
     const allowed = [
-      'first_name', 'last_name', 'email', 'password',
-      'interests', 'university', 'role', 'program',
-      'profile_picture', 'bio', 'location'
+      "first_name",
+      "last_name",
+      "email",
+      "password",
+      "interests",
+      "university",
+      "role",
+      "program",
+      "profile_picture",
+      "bio",
+      "location"
     ];
 
     const updates = Object.keys(req.body);
     const isValid = updates.every((key) => allowed.includes(key));
 
     if (!isValid)
-      return res.json(errorResponse('Invalid update fields'));
+      return res.json(errorResponse("Invalid update fields"));
 
     if (req.body.email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(req.body.email))
-        return res.json(errorResponse('Invalid email address'));
+        return res.json(errorResponse("Invalid email address"));
     }
 
     if (req.body.password && req.body.password.length < 6)
-      return res.json(errorResponse('Password must be at least 6 characters'));
+      return res.json(errorResponse("Password must be at least 6 characters"));
 
-    let user = req.profile;
+    const user = req.profile;
 
     updates.forEach((key) => (user[key] = req.body[key]));
-    user.updated = Date.now();
+    user.updatedAt = Math.floor(Date.now() / 1000);
     await user.save();
 
-    // Hide sensitive fields
     user.hashed_password = undefined;
     user.salt = undefined;
 
-    return res.json({
-      success: true,
-      user: {
+    return res.json(
+      successResponse("User updated successfully", {
         id: user._id,
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
         university: user.university,
         program: user.program,
+        role: user.role,
         interests: user.interests,
         bio: user.bio,
         profile_picture: user.profile_picture,
-        photos: user.photos,
-        role: user.role,
-      }
-    });
-
+        photos: user.photos
+      })
+    );
   } catch (err) {
     return res.json(errorResponse(errorHandler.getErrorMessage(err)));
   }
 };
 
-
-/* --------------------------
+/* ============================================================
    REMOVE USER
--------------------------- */
+============================================================ */
 const remove = async (req, res) => {
   try {
-    let user = req.profile;
-    let deletedUser = await user.deleteOne();
-
+    const deletedUser = await req.profile.deleteOne();
     deletedUser.hashed_password = undefined;
     deletedUser.salt = undefined;
-    res.json(successResponse('User deleted successfully', deletedUser));
+
+    return res.json(
+      successResponse("User deleted successfully", deletedUser)
+    );
   } catch (err) {
     return res.json(errorResponse(errorHandler.getErrorMessage(err)));
   }
 };
 
-/* --------------------------
-    NEW: UPLOAD PROFILE PHOTO
--------------------------- */
+/* ============================================================
+   UPLOAD PROFILE PHOTO
+============================================================ */
 const uploadProfilePhoto = async (req, res) => {
   try {
     if (!req.file)
@@ -137,67 +144,62 @@ const uploadProfilePhoto = async (req, res) => {
 
     const filePath = `/uploads/profile/${req.file.filename}`;
 
-    // Update user in DB
     const updatedUser = await User.findByIdAndUpdate(
       req.params.userId,
       { profile_picture: filePath },
       { new: true }
     ).select("-hashed_password -salt");
 
-    if (!updatedUser) {
+    if (!updatedUser)
       return res.status(404).json({ error: "User not found" });
-    }
 
-    return res.json({
-      success: true,
-      message: "Profile updated",
-      user: {
-        id: updatedUser._id,
-        first_name: updatedUser.first_name,
-        last_name: updatedUser.last_name,
-        email: updatedUser.email,
-        university: updatedUser.university,
-        program: updatedUser.program,
-        interests: updatedUser.interests,
-        bio: updatedUser.bio,
-        profile_picture: updatedUser.profile_picture,
-        photos: updatedUser.photos,
-        role: updatedUser.role,
-      }
-    });
-
+    return res.json(
+      successResponse("Profile updated", updatedUser)
+    );
   } catch (err) {
     console.error("Upload error:", err);
     return res.status(500).json({ error: "Server error uploading photo" });
   }
 };
 
-
-
-// Upload photo
+/* ============================================================
+   UPLOAD GALLERY PHOTO
+============================================================ */
 const uploadGalleryPhoto = async (req, res) => {
   try {
-    if (!req.file) {
+    if (!req.file)
       return res.status(400).json({ error: "No file uploaded" });
-    }
 
-    const filePath = "/uploads/gallery/" + req.file.filename;
+    const filePath = `/uploads/gallery/${req.file.filename}`;
 
     const user = await User.findById(req.params.userId);
-
     user.photos.push(filePath);
     await user.save();
 
-    res.json({
-      message: "Photo added to gallery",
-      photoUrl: filePath,
-      photos: user.photos
-    });
+    return res.json(
+      successResponse("Photo added to gallery", {
+        photoUrl: filePath,
+        photos: user.photos
+      })
+    );
   } catch (err) {
     console.error("Gallery upload error:", err);
-    res.status(500).json({ error: "Failed to upload gallery photo" });
+    return res.status(500).json({
+      error: "Failed to upload gallery photo"
+    });
   }
 };
 
-
-export default { create, userByID, read, list, remove, update, uploadProfilePhoto, uploadGalleryPhoto };
+/* ============================================================
+   EXPORT ONLY USER-RELATED FUNCTIONS
+============================================================ */
+export default {
+  create,
+  list,
+  userByID,
+  read,
+  update,
+  remove,
+  uploadProfilePhoto,
+  uploadGalleryPhoto
+};

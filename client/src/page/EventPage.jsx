@@ -9,14 +9,15 @@ function EventPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
+  // Load current user
   useEffect(() => {
     const userData = localStorage.getItem("user");
-    if (userData) {
-      setCurrentUser(JSON.parse(userData));
-    }
+    if (userData) setCurrentUser(JSON.parse(userData));
   }, []);
 
+  // Format date
   const formatDate = (isoString) => {
     if (!isoString) return "Unknown";
     return new Date(isoString).toLocaleDateString("en-US", {
@@ -26,9 +27,10 @@ function EventPage() {
     });
   };
 
+  // Fetch events
   const fetchEvents = async () => {
     try {
-      const res = await api.get("/api/events");
+      const res = await api.get("/api/events/full");
       setEvents(res.data || []);
     } catch (err) {
       console.error(err);
@@ -42,6 +44,14 @@ function EventPage() {
     fetchEvents();
   }, []);
 
+  // Check if user joined
+  const hasJoined = (event) => {
+    if (!currentUser) return false;
+    const myId = currentUser.id || currentUser._id;
+    return event.participants?.some((p) => p._id === myId);
+  };
+
+  // Join event
   const handleJoin = async (eventId) => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
@@ -50,21 +60,20 @@ function EventPage() {
         return;
       }
 
-      const res = await api.post(`/api/events/${eventId}/join`);
-      
-      // Simple success check 
+      await api.post(`/api/events/${eventId}/join`);
       await fetchEvents();
       alert("Successfully joined the event!");
-      
     } catch (err) {
       console.error("Join error:", err);
       alert("Failed to join event. Please try again.");
     }
   };
 
+  // Check if user is organizer
   const isUserOrganizer = (event) => {
     if (!currentUser || !event.organizer) return false;
-    return event.organizer._id === currentUser._id;
+    const myId = currentUser.id || currentUser._id;
+    return (event.organizer._id || event.organizer.id) === myId;
   };
 
   if (loading) return <p>Loading events...</p>;
@@ -87,9 +96,22 @@ function EventPage() {
 
           <input type="text" placeholder="Search events..." />
 
-          <EventForm
-            onEventCreated={(newEvent) => setEvents([...events, newEvent])}
-          />
+          <button
+            className="create-event-btn"
+            onClick={() => setShowCreateForm(true)}
+          >
+            + Create Event
+          </button>
+
+          {showCreateForm && (
+            <EventForm
+              onClose={() => setShowCreateForm(false)}
+              onEventCreated={(newEvent) => {
+                setEvents([...events, newEvent]);
+                setShowCreateForm(false);
+              }}
+            />
+          )}
         </div>
       </header>
 
@@ -98,7 +120,8 @@ function EventPage() {
 
         <div className="events-list">
           {events.map((event) => (
-            <div key={event.id} className="event-card">
+            // FIX #1 — More resilient event key
+            <div key={event.id || event._id} className="event-card">
               <div className="event-top">
                 <div className="event-image">
                   <img
@@ -108,8 +131,7 @@ function EventPage() {
                 </div>
 
                 <div className="event-info">
-                  {/* Clickable Event Title */}
-                  <Link to={`/events/${event.id}`} className="event-title-link">
+                  <Link to={`/events/${event.id || event._id}`} className="event-title-link">
                     <h3>{event.title}</h3>
                   </Link>
 
@@ -120,10 +142,9 @@ function EventPage() {
                   {event.organizer && (
                     <p>
                       <strong>Organizer:</strong>{" "}
-                      {event.organizer.first_name 
+                      {event.organizer.first_name
                         ? `${event.organizer.first_name} ${event.organizer.last_name}`
-                        : event.organizer.email || "Unknown"
-                      }
+                        : event.organizer.email || "Unknown"}
                     </p>
                   )}
                 </div>
@@ -139,11 +160,12 @@ function EventPage() {
 
                 {event.participants?.length > 0 ? (
                   <ul>
-                    {event.participants.map((user, index) => (
-                      <li key={user._id || index}>
+                    {event.participants.map((user) => (
+                      // FIX #2 — Resilient participant key
+                      <li key={user._id || user.id || user}>
                         {user.first_name
                           ? `${user.first_name} ${user.last_name}`
-                          : user.email || "Unknown User"}
+                          : user.email || String(user)}
                       </li>
                     ))}
                   </ul>
@@ -153,13 +175,18 @@ function EventPage() {
               </div>
 
               <div className="event-actions">
-                <button onClick={() => handleJoin(event.id)}>
-                  Join Event
-                </button>
+                {hasJoined(event) ? (
+                  <button className="joined-btn" disabled>
+                    ✔ Joined
+                  </button>
+                ) : (
+                  <button onClick={() => handleJoin(event.id || event._id)}>
+                    Join Event
+                  </button>
+                )}
 
-                {/* Edit Button - Only show for event organizer */}
                 {isUserOrganizer(event) && (
-                  <Link to={`/events/${event.id}/edit`} className="edit-btn">
+                  <Link to={`/events/${event.id || event._id}/edit`} className="edit-btn">
                     Edit
                   </Link>
                 )}

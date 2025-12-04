@@ -12,6 +12,7 @@ const UserSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+
   email: {
     type: String,
     required: "Email is required",
@@ -20,49 +21,83 @@ const UserSchema = new mongoose.Schema({
     trim: true,
     match: [/.+\@.+\..+/, "Please fill a valid email address"],
   },
+
   hashed_password: { type: String, required: "Password is required" },
+
   role: {
     type: String,
     enum: ['student', 'admin', 'organizer', 'business'],
     default: 'student'
   },
+
   interests: [String],
   university: String,
   program: String,
+
   profile_picture: {
     type: String,
-    default: "/uploads/profile/default.png",  // default placeholder
+    default: "/uploads/profile/default.png",
   },
+
   photos: {
     type: [String],
     default: []
   },
+
   bio: String,
   location: String,
+
+  /* ======================================
+      ⭐ NEW FRIEND SYSTEM (CLEAN + CORRECT)
+     ====================================== */
+
+  // Users who are already friends
+  friends: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+  ],
+
+  // Friend requests you SENT OUT to other people
+  sentRequests: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+  ],
+
+  // Friend requests you RECEIVED from other people
+  receivedRequests: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+  ],
+
+  /* ====================================== */
+
   salt: String,
+
   status: {
     type: String,
     enum: ['active', 'inactive', 'banned'],
     default: 'active'
   },
+
   createdAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
   updatedAt: { type: Number, default: () => Math.floor(Date.now() / 1000) },
   last_login_at: { type: Number, default: () => Math.floor(Date.now() / 1000) }
-}, {
-  timestamps: true
-});
+
+}, { timestamps: true });
+
+
+/* ======================================
+   PASSWORD & AUTH LOGIC
+====================================== */
 
 UserSchema.virtual("password")
   .set(function (password) {
     this._password = password;
     this.salt = this.makeSalt();
-    //this.hashed_password = password;
     this.hashed_password = this.encryptPassword(password);
   })
   .get(function () {
     return this._password;
   });
-UserSchema.path("hashed_password").validate(function (v) {
+
+UserSchema.path("hashed_password").validate(function () {
   if (this._password && this._password.length < 6) {
     this.invalidate("password", "Password must be at least 6 characters.");
   }
@@ -70,11 +105,12 @@ UserSchema.path("hashed_password").validate(function (v) {
     this.invalidate("password", "Password is required");
   }
 }, null);
+
 UserSchema.methods = {
   authenticate: function (plainText) {
-    const a = this.encryptPassword(plainText);
     return this.encryptPassword(plainText) === this.hashed_password;
   },
+
   encryptPassword: function (password) {
     if (!password) return "";
     try {
@@ -87,9 +123,10 @@ UserSchema.methods = {
       return "";
     }
   },
+
   makeSalt: function () {
     return Math.round(new Date().valueOf() * Math.random()) + "";
-  },
+  }
 };
 
-export default mongoose.model('User', UserSchema);
+export default mongoose.model("User", UserSchema);

@@ -128,6 +128,7 @@
 .search-result-card {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 12px 14px;
   border-radius: 12px;
   background: #ebe7fc; 
@@ -146,6 +147,7 @@
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
+  height: 100%;
   gap: 15px;
 }
 
@@ -216,32 +218,72 @@
 }
 
 /* Send message */
-.message-btn i {
-  color: #6c63ff;
-}
+
 
 /* Join event */
-.join-btn i {
-  color: #28a745;
-}
 
 .join-btn:hover i {
-  color: #1e8a36;
+  background: #d2e9ff;
 }
 
 /* Parent container fix */
+/* Keep tags left, buttons right */
 .result-extra-container {
   display: flex;
-  align-items: center;
-  width: 40%;
-  gap: 8px;
-  overflow: visible;
+  flex-direction: row;
+  align-items: stretch;      /* allow children to stretch vertically */
+  justify-content: flex-end;
+  gap: 12px;
+  align-self: stretch;       /* <-- this is the missing piece */
 }
+
+
+/* Buttons wrapper */
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Standardize size so buttons stay perfectly round */
+.action-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: #eaf4ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.action-btn i {
+  font-size: 18px;
+}
+
+/* Hover */
+.action-btn:hover {
+  background: #d2e9ff;
+}
+
+/* Add friend color tweak */
+.friend-btn {
+  background: #eaf4ff;
+}
+
+.friend-btn:hover {
+  background: #d2e9ff;
+}
+
 
 
 .result-interests {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 8px;
   justify-content: flex-end;
 }
@@ -335,6 +377,15 @@
   animation: fadeIn 0.15s ease-in-out;
 }
 
+.divider-dot {
+  width: 1px;                               /* thin line */
+  background: rgba(0, 0, 0, 0.12);          /* subtle color */
+  margin: 0 1px;                           /* space from tags/buttons */
+  align-self: stretch;                      /* fill the parent's height */
+  border-radius: 1px;
+}
+
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -350,4 +401,111 @@
   .search-bar-row {
     max-width: 100%;
   }
+}
+
+.toast-notification {
+  position: fixed;
+  bottom: 20px;
+  right: -300px;
+  padding: 12px 20px;
+  color: white;
+  border-radius: 6px;
+  font-size: 15px;
+  opacity: 0;
+  transition: all 0.35s ease;
+  z-index: 9999;
+}
+
+.toast-notification.show {
+  right: 20px;
+  opacity: 1;
+}
+
+/* COLORS */
+.toast-notification.success {
+  background: #4caf50;
+}
+
+.toast-notification.error {
+  background: #e74c3c;
+}
+
+.toast-notification.warning {
+  background: #f39c12;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.user-preview-modal {
+  width: 400px;
+  background: #fff;
+  padding: 25px;
+  border-radius: 14px;
+  position: relative;
+  animation: fadeIn 0.2s ease;
+  box-shadow: 0 5px 30px rgba(0,0,0,0.2);
+}
+
+.close-btn {
+  font-size: 22px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.preview-image-wrapper {
+  width: 130px;
+  height: 130px;
+  margin: 0 auto;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.preview-placeholder {
+  font-size: 100px;
+  display: block;
+  text-align: center;
+}
+
+.preview-detail,
+.preview-email {
+  text-align: center;
+  margin: 6px 0;
+}
+
+.preview-interests {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.view-profile-btn {
+  width: 100%;
+  padding: 10px 0;
+  background: #3b3f58;
+  color: white;
+  border-radius: 12px;
+  border: none;
+  margin-top: 20px;
+  font-size: 16px;
+  cursor: pointer;
 }

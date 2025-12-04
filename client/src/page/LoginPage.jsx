@@ -17,7 +17,6 @@ function LoginPage({ setIsLoggedIn }) {
     setError("");
 
     try {
-      // ✅ use api.post instead of fetch + localhost
       const data = await api.post("/api/auth/login", {
         user: { email, password },
         rememberMe: false,
@@ -28,19 +27,23 @@ function LoginPage({ setIsLoggedIn }) {
         return;
       }
 
-      // Store JWT + user
-      localStorage.setItem("jwt", data.data.token);
-      localStorage.setItem("user", JSON.stringify(data.data.user));
+      // ✅ Store BOTH token + user INSIDE jwt
+      localStorage.setItem(
+        "jwt",
+        JSON.stringify({
+          token: data.data.token,
+          user: data.data.user,
+        })
+      );
 
-      // Update login state globally
       setIsLoggedIn(true);
-
       navigate("/");
     } catch (err) {
       console.error("Login error:", err);
       setError("Server error. Try again.");
     }
   };
+
 
   return (
     <div className="login-page-wrapper">

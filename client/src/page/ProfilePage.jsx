@@ -10,6 +10,8 @@ import {
 import "./ProfilePage.css";
 import placeholderProfile from "../image/placeholder-profile.jpg";
 import { useNavigate } from "react-router-dom";
+import { fileURL } from "../apis/client";
+
 
 /* ======================================================
       SAFE JWT PARSING FOR LOCALSTORAGE
@@ -28,7 +30,6 @@ function safeParseJWT(raw) {
 }
 
 function ProfilePage() {
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const fileInputRef = useRef(null);
   const galleryInputRef = useRef(null);
   const navigate = useNavigate();
@@ -257,12 +258,7 @@ function ProfilePage() {
             {/* PROFILE IMAGE */}
             <div className="profile-image-wrapper" onClick={handleImageClick}>
               <img
-                src={
-                  preview ||
-                  (user.profile_picture
-                    ? `${BASE_URL}${user.profile_picture}`
-                    : placeholderProfile)
-                }
+                src={preview || fileURL(user.profile_picture) || placeholderProfile}
                 className="profile-image"
                 alt="Profile"
               />
@@ -324,10 +320,10 @@ function ProfilePage() {
               {gallery.map((photo, index) => (
                 <div className="album-tile" key={index}>
                   <img
-                    src={`${BASE_URL}${photo}`}
+                    src={fileURL(photo)}
                     alt="gallery"
                     className="album-photo"
-                    onClick={() => openImage(`${BASE_URL}${photo}`)}
+                    onClick={() => openImage(fileURL(photo))}
                     style={{ cursor: "pointer" }}
                   />
                 </div>

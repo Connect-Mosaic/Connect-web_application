@@ -3,47 +3,55 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import "./SearchPage.css";
 import { api } from "../apis/client";
 
+// ✅ Use the modal component instead of inline modal
+import FriendProfileModal from "../components/FriendProfile";
+
 function SearchPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState({ users: [], events: [] });
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const [selectedUserId, setSelectedUserId] = useState(null); // ONLY store the ID  
+  const [showModal, setShowModal] = useState(false);
+
   const navigate = useNavigate();
 
-  /* ----------------------------------------
-     Load query from URL on mount ONLY (DO NOT SEARCH automatically)
-  ---------------------------------------- */
-  useEffect(() => {
-    const urlQuery = searchParams.get("q");
-    if (urlQuery) {
-      setQuery(urlQuery);
-      // Do NOT call performSearch here
-    }
-  }, []);
+  /* ---------------- TOAST ---------------- */
+  const showToast = (message, type = "success") => {
+    const toast = document.createElement("div");
+    toast.className = `toast-notification ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
 
-  /* ----------------------------------------
-     Handle pressing Enter
-  ---------------------------------------- */
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      performSearch(query);
-    }
+    setTimeout(() => toast.classList.add("show"), 10);
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
   };
 
-  /* ----------------------------------------
-     Perform Search ONLY when manually called
-  ---------------------------------------- */
+  /* ---------------- RELATIONSHIP DETECTOR ---------------- */
+  const detectRelationship = (user) => {
+    const me = JSON.parse(localStorage.getItem("user"));
+    if (!me) return "none";
+
+    const myId = me._id;
+
+    if (user.friends?.includes(myId)) return "friends";
+    if (user.friendRequests?.includes(myId)) return "pending";
+    if (user.sentRequests?.includes(myId)) return "requested";
+
+    return "none";
+  };
+
+  /* ---------------- SEARCH ---------------- */
   const performSearch = async (searchQuery) => {
     const trimmed = searchQuery.trim();
-
-    // Mark that the user intentionally searched
     setHasSearched(true);
-
-    // Update URL
     setSearchParams({ q: trimmed });
 
-    // If empty search → clear results
     if (!trimmed) {
       setResults({ users: [], events: [] });
       return;
@@ -52,49 +60,106 @@ function SearchPage() {
     setLoading(true);
 
     try {
-      const data = await api.get(`/api/search?q=${encodeURIComponent(trimmed)}`);
+      const response = await api.get(`/api/search?q=${encodeURIComponent(trimmed)}`);
 
-      if (data.success) {
-        setResults(data.data || { users: [], events: [] });
+      if (response.success) {
+        const enrichedUsers = response.data.users.map((u) => ({
+          ...u,
+          relationship: detectRelationship(u),
+        }));
+
+        const enrichedEvents = response.data.events.map((ev) => ({
+          ...ev,
+          eventState: ev.eventState || "none",
+        }));
+
+        setResults({
+          users: enrichedUsers,
+          events: enrichedEvents,
+        });
       } else {
         setResults({ users: [], events: [] });
       }
-    } catch (error) {
-      console.error("Search error:", error);
-      setResults({ users: [], events: [] });
+    } catch (err) {
+      console.error("Search error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  /* ----------------------------------------
-     Format Helpers
-  ---------------------------------------- */
-  const handleSearchChange = (e) => setQuery(e.target.value);
+  /* ---------------- EVENT JOIN/LEAVE ---------------- */
+  const joinEvent = async (eventId) => {
+    try {
+      const res = await api.post(`/api/events/${eventId}/join`);
+      if (res.success) {
+        showToast("Joined event!", "success");
+      }
+    } catch {
+      showToast("Failed to join event", "error");
+    }
+  };
 
-  const handleUserClick = (user) => navigate(`/profile/${user._id}`);
+  const leaveEvent = async (eventId) => {
+    try {
+      const res = await api.post(`/api/events/${eventId}/leave`);
+      if (res.success) {
+        showToast("Left event", "warning");
+      }
+    } catch {
+      showToast("Failed to leave event", "error");
+    }
+  };
+
+  /* ---------------- USER CLICK → OPEN MODAL ---------------- */
+  const handleUserClick = (user) => {
+    setSelectedUserId(user._id);
+    setShowModal(true);
+  };
+
   const handleEventClick = (event) => navigate(`/events/${event._id}`);
 
-  const formatDate = (date) =>
-    new Date(date).toLocaleDateString();
+  /* ---------------- RENDER FRIEND BUTTON ---------------- */
+  const renderFriendButton = (user) => {
+    const s = user.relationship || "none";
 
-  const formatTime = (time) =>
-    new Date(`1970-01-01T${time}`).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    if (s === "friends")
+      return (
+        <button className="action-btn friend-btn">
+          <i className="bi bi-person-check-fill"></i>
+        </button>
+      );
 
-  const getUserFullName = (u) =>
-    `${u.first_name || ""} ${u.last_name || ""}`.trim();
+    if (s === "requested")
+      return (
+        <button className="action-btn friend-btn">
+          <i className="bi bi-hourglass-split"></i>
+        </button>
+      );
 
-  const totalResults = results.users.length + results.events.length;
+    if (s === "pending")
+      return (
+        <div className="friend-action-group">
+          <button className="action-btn friend-btn accept">
+            <i className="bi bi-check-lg"></i>
+          </button>
+          <button className="action-btn friend-btn reject">
+            <i className="bi bi-x-lg"></i>
+          </button>
+        </div>
+      );
 
-  /* ======================================================================
-     RENDER
-  ====================================================================== */
+    return (
+      <button className="action-btn friend-btn">
+        <i className="bi bi-person-plus"></i>
+      </button>
+    );
+  };
+
+  /* ---------------- RENDER ---------------- */
+  const total = results.users.length + results.events.length;
+
   return (
     <div className="search-page">
-      {/* ================= HEADER ================= */}
       <div className="search-header">
         <h3 className="search-title">Search Results</h3>
 
@@ -104,27 +169,23 @@ function SearchPage() {
             type="text"
             placeholder="Search Students or Events..."
             value={query}
-            onChange={handleSearchChange}
-            onKeyDown={handleKeyDown}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && performSearch(query)}
           />
-          <button
-            className="search-bar-button"
-            type="button"
-            onClick={() => performSearch(query)}
-          >
+          <button className="search-bar-button" onClick={() => performSearch(query)}>
             Search
           </button>
         </div>
 
         {hasSearched && (
           <p className="search-summary">
-            Showing <strong>{totalResults}</strong> results for{" "}
+            Showing <strong>{total}</strong> results for{" "}
             <span className="search-summary-query">"{query}"</span>
           </p>
         )}
       </div>
 
-      {/* ================= RESULTS CONTAINER ================= */}
+      {/* ------------ RESULTS ------------- */}
       <div className="result-container">
         {loading ? (
           <p className="search-loading">Searching...</p>
@@ -133,222 +194,134 @@ function SearchPage() {
             Enter a search term to find users and events...
           </p>
         ) : (
-          <>
-            <div className="search-content">
-              <div className="search-columns">
-                {/* ================= PEOPLE COLUMN ================= */}
-                <section className="search-column">
-                  <h4 className="column-title">People</h4>
-                  <p className="column-subtitle">
-                    Students who match your interests
-                  </p>
+          <div className="search-content">
+            <div className="search-columns">
 
-                  {results.users.length > 0 ? (
-                    <div className="search-results">
-                      {results.users.map((user) => (
-                        <div
-                          key={user._id}
-                          className="search-result-card"
-                          onClick={() => handleUserClick(user)}
-                        >
-                          <div className="result-content">
-                            {/* LEFT SIDE */}
-                            <div className="result-left">
-                              <div className="result-icon-container">
-                                {user.profileImage ? (
-                                  <img
-                                    src={user.profileImage}
-                                    alt="profile"
-                                    className="result-profile-image"
-                                  />
-                                ) : (
-                                  <i className="bi bi-person-circle result-profile-placeholder"></i>
-                                )}
-                              </div>
+              {/* ------------ USERS ------------- */}
+              <section className="search-column">
+                <h4 className="column-title">People</h4>
+                <p className="column-subtitle">Students who match your interests</p>
 
-                              <div className="result-main-container">
-                                <h4 className="result-title">
-                                  {getUserFullName(user) || "Unnamed user"}
-                                </h4>
+                {results.users.length > 0 ? (
+                  <div className="search-results">
+                    {results.users.map((user) => (
+                      <div
+                        key={user._id}
+                        className="search-result-card"
+                        onClick={() => handleUserClick(user)}
+                      >
+                        <div className="result-content">
 
-                                {user.email && (
-                                  <p className="result-subtitle">
-                                    <i className="bi bi-envelope"></i>{" "}
-                                    {user.email}
-                                  </p>
-                                )}
-
-                                {user.university && (
-                                  <p className="result-detail">
-                                    <i className="bi bi-mortarboard"></i>{" "}
-                                    {user.university}
-                                  </p>
-                                )}
-
-                                {user.program && (
-                                  <p className="result-detail">
-                                    <i className="bi bi-journal-code"></i>{" "}
-                                    {user.program}
-                                  </p>
-                                )}
-
-                                {user.location && (
-                                  <p className="result-detail">
-                                    <i className="bi bi-geo-alt"></i>{" "}
-                                    {user.location}
-                                  </p>
-                                )}
-                              </div>
+                          {/* IMAGE */}
+                          <div className="result-left">
+                            <div className="result-icon-container">
+                              {user.profile_picture ? (
+                                <img
+                                  src={user.profile_picture}
+                                  className="result-profile-image"
+                                  alt="profile"
+                                />
+                              ) : (
+                                <i className="bi bi-person-circle result-profile-placeholder"></i>
+                              )}
                             </div>
 
-                            {/* RIGHT SIDE — Interests */}
-                            <div className="result-extra-container">
-                              <button className="action-btn message-btn">
-                                <i className="bi bi-chat-dots"></i>
-                              </button>
+                            {/* MAIN INFO */}
+                            <div className="result-main-container">
+                              <h4 className="result-title">
+                                {user.first_name} {user.last_name}
+                              </h4>
 
-                              {user.interests?.length > 0 && (
-                                <div className="result-interests">
-                                  {/* first 3 */}
-                                  {user.interests.slice(0, 3).map((int, i) => (
-                                    <span key={i} className="interest-chip">
-                                      {int}
-                                    </span>
-                                  ))}
-
-                                  {/* More */}
-                                  {user.interests.length > 3 && (
-                                    <div className="interest-more-chip">
-                                      <i className="bi bi-plus-circle"></i>
-                                      <span className="more-count">
-                                        +{user.interests.length - 3}
-                                      </span>
-
-                                      <div className="interest-tooltip">
-                                        {user.interests
-                                          .slice(3)
-                                          .map((extra, i) => (
-                                            <div
-                                              key={i}
-                                              className="tooltip-item"
-                                            >
-                                              {extra}
-                                            </div>
-                                          ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
+                              {user.email && (
+                                <p className="result-subtitle">
+                                  <i className="bi bi-envelope"></i> {user.email}
+                                </p>
                               )}
                             </div>
                           </div>
+
+                          {/* RIGHT SIDE */}
+                          <div className="result-extra-container">
+                            {/* INTEREST TAGS */}
+                            {user.interests?.length > 0 && (
+                              <div className="result-interests">
+                                {user.interests.slice(0, 3).map((int, i) => (
+                                  <span key={i} className="interest-chip">{int}</span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* FRIEND BUTTON */}
+                            <div className="divider-dot"></div>
+                            {renderFriendButton(user)}
+                          </div>
+
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="empty-text">No matching students found.</p>
-                  )}
-                </section>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-text">No matching students found.</p>
+                )}
+              </section>
 
-                {/* ================= EVENTS COLUMN ================= */}
-                <section className="search-column">
-                  <h4 className="column-title">Events</h4>
-                  <p className="column-subtitle">
-                    Upcoming events that match your interests
-                  </p>
+              {/* ------------ EVENTS ------------- */}
+              <section className="search-column">
+                <h4 className="column-title">Events</h4>
+                <p className="column-subtitle">Upcoming events that match your interests</p>
 
-                  {results.events.length > 0 ? (
-                    <div className="search-results">
-                      {results.events.map((event) => (
-                        <div
-                          key={event._id}
-                          className="search-result-card"
-                          onClick={() => handleEventClick(event)}
-                        >
-                          <div className="result-content">
-                            {/* LEFT */}
-                            <div className="result-left">
-                              <div className="result-icon-container">
-                                <i className="bi bi-calendar-event result-profile-placeholder"></i>
-                              </div>
-
-                              <div className="result-main-container">
-                                <h4 className="result-title">{event.title}</h4>
-
-                                {event.date && (
-                                  <p className="result-subtitle">
-                                    <i className="bi bi-calendar2-week"></i>{" "}
-                                    {formatDate(event.date)}
-                                    {event.startTime &&
-                                      ` • ${formatTime(event.startTime)}`}
-                                    {event.endTime &&
-                                      ` - ${formatTime(event.endTime)}`}
-                                  </p>
-                                )}
-
-                                {event.location && (
-                                  <p className="result-detail">
-                                    <i className="bi bi-geo-alt"></i>{" "}
-                                    {event.location}
-                                  </p>
-                                )}
-                              </div>
+                {results.events.length > 0 ? (
+                  <div className="search-results">
+                    {results.events.map((ev) => (
+                      <div
+                        key={ev._id}
+                        className="search-result-card"
+                        onClick={() => handleEventClick(ev)}
+                      >
+                        <div className="result-content">
+                          <div className="result-left">
+                            <div className="result-icon-container">
+                              <i className="bi bi-calendar-event result-profile-placeholder"></i>
                             </div>
 
-                            {/* RIGHT — Interests */}
-                            <div className="result-extra-container">
+                            <div className="result-main-container">
+                              <h4 className="result-title">{ev.title}</h4>
+                            </div>
+                          </div>
+
+                          <div className="result-extra-container">
+                            {ev.eventState === "joined" ? (
+                              <button className="action-btn join-btn joined">
+                                <i className="bi bi-check-circle-fill"></i>
+                              </button>
+                            ) : (
                               <button className="action-btn join-btn">
                                 <i className="bi bi-plus-circle"></i>
                               </button>
-
-                              {event.interests?.length > 0 && (
-                                <div className="result-interests">
-                                  {event.interests
-                                    .slice(0, 3)
-                                    .map((int, i) => (
-                                      <span key={i} className="interest-chip">
-                                        {int}
-                                      </span>
-                                    ))}
-
-                                  {event.interests.length > 3 && (
-                                    <div className="interest-more-chip">
-                                      <i className="bi bi-plus-circle"></i>
-                                      <span className="more-count">
-                                        +
-                                        {event.interests.length - 3}
-                                      </span>
-
-                                      <div className="interest-tooltip">
-                                        {event.interests
-                                          .slice(3)
-                                          .map((extra, i) => (
-                                            <div
-                                              key={i}
-                                              className="tooltip-item"
-                                            >
-                                              {extra}
-                                            </div>
-                                          ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="empty-text">No matching events found.</p>
-                  )}
-                </section>
-              </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No matching events found.</p>
+                )}
+              </section>
             </div>
-          </>
+          </div>
         )}
       </div>
+
+      {/* ===============================
+            FRIEND PROFILE MODAL
+          =============================== */}
+      {showModal && selectedUserId && (
+        <FriendProfileModal
+          userId={selectedUserId}
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </div>
   );
 }

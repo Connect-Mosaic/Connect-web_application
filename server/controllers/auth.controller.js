@@ -2,110 +2,92 @@ import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { expressjwt } from "express-jwt";
 import config from "../configs/config.js";
-import { successResponse, errorResponse } from '../helpers/apiResponse.js';
+import { successResponse, errorResponse } from "../helpers/apiResponse.js";
+
+/* ======================================================
+   LOGIN
+====================================================== */
 const login = async (req, res) => {
   try {
     const { email, password } = req.body.user || {};
     const rememberMe = req.body.rememberMe || false;
 
-    console.log('[Auth] login input', { email, rememberMe }); // do NOT log passwords
-
-    // Validate input
     if (!email || !password) {
-      console.log('[Auth] login failed - missing email or password');
-      return res.json(errorResponse('Email and password are required'));
+      return res.json(errorResponse("Email and password are required"));
     }
 
-    // Find user
-    console.log('[Auth] Looking up user for email:', email);
-    let user = await User.findOne({ email: email });
-    if (!user) {
-      console.log('[Auth] login failed - user not found for email:', email);
-      return res.json(errorResponse("User not found"));
-    }
-    console.log('[Auth] user found with id:', user._id);
-
-    // Check password
-    if (!user.authenticate(password)) {
-      console.log('[Auth] login failed - authentication failed for user id:', user._id);
+    const user = await User.findOne({ email });
+    if (!user) return res.json(errorResponse("User not found"));
+    if (!user.authenticate(password))
       return res.json(errorResponse("Email and password don't match."));
-    }
-    console.log('[Auth] authentication successful for user id:', user._id);
 
-    // Update last login time
     user.last_login_at = Math.floor(Date.now() / 1000);
     await user.save();
 
-    // Generate JWT token
     const token = jwt.sign(
       {
-        userId: user._id,
+        userId: user._id.toString(),
         email: user.email,
-        role: user.role
+        role: user.role,
       },
       config.jwtSecret,
-      { expiresIn: rememberMe ? '7d' : '24h' }
+      { expiresIn: rememberMe ? "7d" : "24h" }
     );
-    console.log('[Auth] JWT token generated for user id:', user._id, 'expiresIn:', rememberMe ? '7d' : '24h');
 
-    return res.json(successResponse('Login successful', {
-      token,
-      user: {
-        id: user._id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-
-        university: user.university,
-        program: user.program,
-        interests: user.interests,
-        bio: user.bio,
-
-        profile_picture: user.profile_picture,
-        photos: user.photos,
-
-        role: user.role,
-        createdAt: user.createdAt,
-      }
-    }));
-
+    return res.json(
+      successResponse("Login successful", {
+        token,
+        user: {
+          id: user._id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          university: user.university,
+          program: user.program,
+          interests: user.interests,
+          bio: user.bio,
+          profile_picture: user.profile_picture,
+          photos: user.photos,
+          role: user.role,
+          createdAt: user.createdAt,
+        },
+      })
+    );
   } catch (err) {
-    console.error('[Auth] Login error:', err && err.stack ? err.stack : err);
+    console.error("[Auth] Login error:", err);
     return res.json(errorResponse("Could not sign in"));
   }
 };
 
+/* ======================================================
+   LOGOUT
+====================================================== */
 const logout = (req, res) => {
-  // Since we're using JWT, logout is handled on frontend by removing token
-  return res.json(successResponse('Logout successful', {
-    message: "Logout successful",
-  }));
+  return res.json(successResponse("Logout successful", {}));
 };
 
+/* ======================================================
+   REGISTER
+====================================================== */
 const register = async (req, res) => {
-  const { first_name, last_name, email, password, university, program, interests, bio, location, profile_picture } = req.body;
-  console.log('[Auth] register called', {
-    first_name,
-    last_name,
-    email,
-    university,
-    program,
-    interests,
-    location,
-    profile_picture
-  }); // Do NOT log passwords
-
   try {
-    // Check if user already exists
-    console.log('[Auth] Checking if user exists for email:', email);
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      console.log('[Auth] Registration failed - user already exists:', email);
-      return res.json(errorResponse('User already exists with this email'));
-    }
+    const {
+      first_name,
+      last_name,
+      email,
+      password,
+      university,
+      program,
+      interests,
+      bio,
+      location,
+      profile_picture,
+    } = req.body;
 
-    // Create new user
-    console.log('[Auth] Creating new user for email:', email);
+    const existingUser = await User.findOne({ email });
+    if (existingUser)
+      return res.json(errorResponse("User already exists with this email"));
+
     const user = new User({
       first_name,
       last_name,
@@ -116,74 +98,93 @@ const register = async (req, res) => {
       interests,
       bio,
       location,
-      profile_picture
+      profile_picture,
     });
 
-
-    console.log('[Auth] Saving new user to DB for email:', email);
     await user.save();
-    console.log('[Auth] User saved with id:', user._id);
 
-    // Generate token for auto-login after registration
     const token = jwt.sign(
       {
-        userId: user._id,
+        userId: user._id.toString(),
         email: user.email,
-        role: user.role
+        role: user.role,
       },
       config.jwtSecret,
-      { expiresIn: '24h' }
+      { expiresIn: "24h" }
     );
-    console.log('[Auth] JWT token generated for user id:', user._id);
 
-    return res.json(successResponse('User registered successfully', {
-      token,
-      user: {
-        id: user._id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-
-        university: user.university,
-        program: user.program,
-        interests: user.interests,
-        bio: user.bio,
-
-        profile_picture: user.profile_picture,
-        photos: user.photos,
-
-        role: user.role,
-        createdAt: user.createdAt,
-      }
-    }));
-
-    // return res.json("User registered successfully");
+    return res.json(
+      successResponse("User registered successfully", {
+        token,
+        user: {
+          id: user._id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          university: user.university,
+          program: user.program,
+          interests: user.interests,
+          bio: user.bio,
+          profile_picture: user.profile_picture,
+          photos: user.photos,
+          role: user.role,
+          createdAt: user.createdAt,
+        },
+      })
+    );
   } catch (err) {
-    console.error('[Auth] Registration error:', err && err.stack ? err.stack : err);
+    console.error("[Auth] Registration error:", err);
     return res.json(errorResponse("Server error during registration"));
   }
 };
 
+/* ======================================================
+   REQUIRE SIGNIN — FIXED VERSION
+====================================================== */
 const requireSignin = expressjwt({
   secret: config.jwtSecret,
   algorithms: ["HS256"],
-  userProperty: "auth",
+  requestProperty: "auth", // decoded token stored in req.auth
+  getToken: (req) => {
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.split(" ")[0] === "Bearer"
+    ) {
+      return req.headers.authorization.split(" ")[1];
+    }
+    return null;
+  },
 });
 
+/* ======================================================
+   AUTH CHECK
+====================================================== */
 const hasAuthorization = (req, res, next) => {
-  const authorized = req.profile && req.auth && req.profile._id == req.auth.userId;
-  if (!authorized) {
-    return res.json(errorResponse('User is not authorized to perform this action'));
-  }
+  if (!req.profile || !req.auth)
+    return res.json(errorResponse("User is not authorized"));
+
+  const isAuthorized =
+    req.profile._id.toString() === req.auth.userId.toString();
+
+  if (!isAuthorized)
+    return res.json(errorResponse("User is not authorized"));
+
   next();
 };
 
+/* ======================================================
+   ADMIN CHECK
+====================================================== */
 const requireAdminAccess = (req, res, next) => {
-  if (req.auth && req.auth.role === "admin") {
-    next();
-  } else {
-    return res.json(errorResponse('User is not authorized to perform this action'));
-  }
+  if (req.auth && req.auth.role === "admin") return next();
+  return res.json(errorResponse("User is not authorized for admin action"));
 };
 
-export default { login, logout, requireSignin, hasAuthorization, requireAdminAccess, register };
+export default {
+  login,
+  logout,
+  register,
+  requireSignin,
+  hasAuthorization,
+  requireAdminAccess,
+};

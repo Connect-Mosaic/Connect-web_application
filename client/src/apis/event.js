@@ -1,26 +1,51 @@
-import {api} from "./client";
+import { api } from "./client";
 
-//GET EVENTS
-export const getEvents = async() => {
-    return await api.get("/api/events/");
+/* ============================================================
+    EVENT LISTING
+============================================================ */
+
+// LIGHTWEIGHT EVENTS (used by MapPage)
+export const getEvents = async () => {
+    return await api.get("/api/events");
 };
 
-//GET SINGLE EVENT
-export const getEvent = async(id) => {
+// FULL EVENTS with participants + organizer (used by EventPage)
+export const getFullEvents = async () => {
+    return await api.get("/api/events/full");
+};
+
+/* ============================================================
+    SINGLE EVENT
+============================================================ */
+
+export const getEvent = async (id) => {
     return await api.get(`/api/events/${id}`);
 };
 
-//CREATE EVENT
-export const createEvent = async(event) => {
-    return await api.post('/api/events', event);
+/* ============================================================
+    EVENT CRUD
+============================================================ */
+
+export const createEvent = async (event) => {
+    return await api.post("/api/events", event);
 };
 
-//UPDATE EVENT
-export const updateEvent = async(id,updates) => {
-    return await api.put(`/api/events/${id}`,updates);
+export const updateEvent = async (id, updates) => {
+    return await api.put(`/api/events/${id}`, updates);
 };
 
-//DELETE EVENT
-export const deleteEvent = async(id) => {
+export const deleteEvent = async (id) => {
     return await api.delete(`/api/events/${id}`);
+};
+
+/* ============================================================
+    PARTICIPATION
+============================================================ */
+
+export const joinEvent = async (eventId) => {
+    return await api.post(`/api/events/${eventId}/join`);
+};
+
+export const leaveEvent = async (eventId) => {
+    return await api.post(`/api/events/${eventId}/leave`);
 };

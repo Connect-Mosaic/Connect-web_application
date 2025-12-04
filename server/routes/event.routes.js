@@ -261,7 +261,9 @@ router.route("/")
  *                     __v: 5
  */
 router.get("/search", eventCont.searchEvents);
+router.get("/full", eventCont.listFull);
 router.post("/:eventId/join", authCont.requireSignin, eventCont.joinEvent);
+router.post("/:eventId/leave", authCont.requireSignin, eventCont.leaveEvent);
 router.route("/:eventId")
     .get(eventCont.eventByID)
     .put(authCont.requireSignin, eventCont.update)

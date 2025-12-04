@@ -4,20 +4,31 @@ import "./Navbar.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 function Navbar({ isLoggedIn, onLogout }) {
-  // Get logged-in user data
+
+  // -----------------------------
+  // SAFE USER RETRIEVAL (from JWT)
+  // -----------------------------
   const getUserData = () => {
-    if (typeof window !== "undefined") {
-      const userData = localStorage.getItem("user");
-      return userData ? JSON.parse(userData) : null;
+    try {
+      const raw = localStorage.getItem("jwt");
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+      return parsed.user || null;
+    } catch {
+      return null;
     }
-    return null;
   };
 
   const user = getUserData();
+
+  // ⭐ FIX: Support both formats from backend
+  const userId = user?._id || user?.id;
+
   const isAdmin = user?.role === "admin";
 
   // ----------------------
-  // 🔔 Notification State
+  // Notification State
   // ----------------------
   const [showNotif, setShowNotif] = useState(false);
 
@@ -27,10 +38,9 @@ function Navbar({ isLoggedIn, onLogout }) {
     { message: "Event reminder: Coding Meetup tonight!", time: "1h ago" }
   ];
 
-  const unreadCount = notifications.length; // Replace later with dynamic value
+  const unreadCount = notifications.length;
   const notifRef = useRef();
 
-  // Close dropdown if user clicks outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) {
@@ -44,16 +54,20 @@ function Navbar({ isLoggedIn, onLogout }) {
 
   return (
     <nav className="navbar">
-      
-      {/* LEFT — Logo */}
       <div className="navbar-left">
         <h2>Mosaic Connect</h2>
       </div>
 
-      {/* CENTER — Perfectly centered links */}
       <div className="navbar-center">
         <NavLink to="/" end className="nav-link">Home</NavLink>
-        <NavLink to="/profile" className="nav-link">Profile</NavLink>
+
+        {/* ⭐ FIX: use userId instead of user._id */}
+        {userId && (
+          <NavLink to={`/profile/${userId}`} className="nav-link">
+            Profile
+          </NavLink>
+        )}
+
         <NavLink to="/events" className="nav-link">Event</NavLink>
         <NavLink to="/map" className="nav-link">Map</NavLink>
         <NavLink to="/chat" className="nav-link">Chat</NavLink>
@@ -67,37 +81,36 @@ function Navbar({ isLoggedIn, onLogout }) {
         )}
       </div>
 
-      {/* RIGHT — Notification + Logout */}
       <div className="navbar-right" ref={notifRef}>
-
-        {/* Notification Bell */}
         <div className="notification-wrapper">
-          <button className="notification-btn" onClick={() => setShowNotif(!showNotif)}>
+          <button
+            className="notification-btn"
+            onClick={() => setShowNotif(!showNotif)}
+          >
             <i className="bi bi-bell"></i>
-            {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+            {unreadCount > 0 && (
+              <span className="notification-badge">{unreadCount}</span>
+            )}
           </button>
 
           {showNotif && (
             <div className="notification-dropdown">
-              {notifications.length > 0 ? (
-                notifications.map((notif, idx) => (
-                  <div key={idx} className="notification-item">
-                    <p>{notif.message}</p>
-                    <span className="notif-time">{notif.time}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="notification-empty">No notifications</div>
-              )}
+              {notifications.map((notif, idx) => (
+                <div key={idx} className="notification-item">
+                  <p>{notif.message}</p>
+                  <span className="notif-time">{notif.time}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Login/Logout */}
         {!isLoggedIn ? (
           <NavLink to="/login" className="nav-link">Login</NavLink>
         ) : (
-          <button className="nav-link logout-link" onClick={onLogout}>Logout</button>
+          <button className="nav-link logout-link" onClick={onLogout}>
+            Logout
+          </button>
         )}
       </div>
     </nav>
