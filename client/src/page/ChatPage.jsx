@@ -12,7 +12,10 @@ import {
 } from "../apis/conversation";
 
 function ChatPage() {
-  const [conversationId, setConversationId] = useState(null);
+  // 從 localStorage 恢復上次選擇的對話 ID
+  const [conversationId, setConversationId] = useState(() => {
+    return localStorage.getItem('selectedConversationId') || null;
+  });
   const [messages, setMessages] = useState([]);
   const [usersMap, setUsersMap] = useState({});
   const [input, setInput] = useState("");
@@ -21,29 +24,36 @@ function ChatPage() {
   const [newChatName, setNewChatName] = useState("");
   const [newChatParticipants, setNewChatParticipants] = useState("");
 
-  const chatContainerRef = useRef(null); // Ref for the scrollable chat container
+  const chatContainerRef = useRef(null); // 如果還用在 ChatPage，否則可移除
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?._id;
 
-  // Memoized scroll to bottom function
-  const scrollToBottom = useCallback(() => {
-    const container = chatContainerRef.current;
-    if (container) {
-      // Use setTimeout to ensure DOM has updated
-      setTimeout(() => {
-        container.scrollTop = container.scrollHeight;
-      }, 0);
+  // 存選擇到 localStorage
+  useEffect(() => {
+    if (conversationId) {
+      localStorage.setItem('selectedConversationId', conversationId);
     }
-  }, []);
+  }, [conversationId]);
 
-  // Auto-scroll to bottom using useLayoutEffect for synchronous DOM access
-  useLayoutEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom();
+  // 初次載入時處理自動選擇（只跑一次，polling 不觸發）
+  useEffect(() => {
+    if (conversations.length > 0 && !conversationId) {
+      // 檢查存的 ID 是否有效
+      const savedId = localStorage.getItem('selectedConversationId');
+      const validSaved = savedId && conversations.find(conv => conv.conversation_id === savedId);
+      const targetId = validSaved ? savedId : conversations[0].conversation_id;
+      setConversationId(targetId);
+    } else if (conversationId && conversations.length > 0) {
+      // 如果存的 ID 失效，fallback 到第一個
+      const isValid = conversations.find(conv => conv.conversation_id === conversationId);
+      if (!isValid) {
+        const firstId = conversations[0].conversation_id;
+        setConversationId(firstId);
+      }
     }
-  }, [messages, scrollToBottom]);
+  }, [conversations, conversationId]); // 依賴 conversations 變化，但只在初次有值時有效
 
-  // Fetch conversations on mount with polling (optimized interval)
+  // Fetch conversations on mount with polling (只更新列表，不碰選擇)
   useEffect(() => {
     let isMounted = true;
     const fetchConversations = async () => {
@@ -51,11 +61,7 @@ function ChatPage() {
         const res = await getUserConversations();
         const convs = Array.isArray(res?.data) ? res.data : [];
         if (isMounted) {
-          setConversations(convs);
-
-          if (!conversationId && convs.length > 0) {
-            setConversationId(convs[0].conversation_id);
-          }
+          setConversations(convs); // 只更新列表
         }
       } catch (err) {
         console.error("Error fetching conversations:", err);
@@ -64,14 +70,14 @@ function ChatPage() {
     };
 
     fetchConversations();
-    const interval = setInterval(fetchConversations, 5000); // Increased to 5s to reduce calls
+    const interval = setInterval(fetchConversations, 10000); // polling 只刷新數據
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, []); // No deps to run once
+  }, []); // 空依賴，只跑一次初始化
 
-  // Fetch messages for the selected conversation with polling
+  // Fetch messages ... (不變)
   useEffect(() => {
     if (!conversationId) return;
 
@@ -108,14 +114,13 @@ function ChatPage() {
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 1000); // Increased to 1s
+    const interval = setInterval(fetchMessages, 3000);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [conversationId, userId]); // Deps for correctness without loop
+  }, [conversationId, userId, usersMap]);
 
-  // Handle sending a message
   const handleSend = async () => {
     const messageContent = input.trim();
     if (!messageContent || !conversationId) return;
@@ -123,7 +128,7 @@ function ChatPage() {
     const tempMessage = {
       temp_id: `temp-${Date.now()}-${Math.random()}`,
       sender: userId,
-      login_user_id: userId, // Add login_user_id for temp messages to match API structure
+      login_user_id: userId,
       content: messageContent,
       timestamp: new Date().toISOString(),
       been_read: false,
@@ -137,7 +142,6 @@ function ChatPage() {
     try {
       const res = await sendMessage(conversationId, { content: messageContent });
       if (res?.success) {
-        // Update temp to sent; polling will replace with real msg
         setMessages((prev) =>
           prev.map((msg) =>
             msg.temp_id === tempMessage.temp_id
@@ -162,7 +166,6 @@ function ChatPage() {
     }
   };
 
-  // Handle new chat creation
   const handleCreateConversation = async (chatDetails) => {
     try {
       const newConversationData = await createConversation(chatDetails);
@@ -176,14 +179,10 @@ function ChatPage() {
     }
   };
 
-  // Find current conversation for sidebar and chat window
   const currentConversation = conversations.find((conv) => conv.conversation_id === conversationId);
 
   return (
     <div className="d-flex flex-column overflow-hidden" style={{ backgroundColor: '#6f42c1', height: '85vh' }}>
-      {/* Top Navigation - Only one nav bar */}
-
-
       <div className="d-flex flex-grow-1 overflow-hidden">
         {/* Sidebar */}
         <div className="d-none d-lg-block col-lg-4 bg-light border-end p-0" style={{ maxWidth: '350px', overflow: 'hidden' }}>
@@ -195,7 +194,7 @@ function ChatPage() {
           />
         </div>
 
-        {/* Mobile Sidebar Trigger (for responsive) */}
+        {/* Mobile Sidebar Trigger */}
         <button className="d-lg-none btn btn-link p-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#chatSidebar">
           <i className="bi bi-list"></i>
         </button>
@@ -205,7 +204,7 @@ function ChatPage() {
           {conversationId ? (
             <>
               <div
-                ref={chatContainerRef}
+                // ref={chatContainerRef} // 如果移到 ChatWindow，可移除
                 className="flex-grow-1 overflow-auto p-3 bg-light position-relative"
                 style={{ backgroundColor: '#e3f2fd' }}
               >
@@ -216,7 +215,6 @@ function ChatPage() {
                 />
               </div>
 
-              {/* Input */}
               <MessageInput
                 input={input}
                 setInput={setInput}
@@ -250,12 +248,11 @@ function ChatPage() {
         </div>
       </div>
 
-      {/* Bottom Social Icons - Only for mobile, non-nav */}
+      {/* Bottom Social Icons */}
       <div className="d-lg-none bg-light border-top p-2 fixed-bottom">
         <div className="d-flex justify-content-around align-items-center">
           <a href="#" className="text-decoration-none"><i className="bi bi-facebook fs-4"></i></a>
           <a href="#" className="text-decoration-none"><i className="bi bi-instagram fs-4"></i></a>
-          {/* Add more icons if needed */}
         </div>
       </div>
     </div>
