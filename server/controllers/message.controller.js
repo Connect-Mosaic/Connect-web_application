@@ -72,7 +72,7 @@ const sendMessage = async (req, res) => {
             sender: message.sender,
             content: message.content,
             timestamp: message.timestamp,
-            been_read: Array.isArray(message.read_by) && message.read_by.length > 0,
+            been_read: false,
             edited: message.edited || false
         };
 
@@ -102,11 +102,11 @@ const getMessages = async (req, res) => {
             conversation_id: msg.conversation_id,
             sender: msg.sender,
             content: msg.content,
-            been_read: Array.isArray(msg.read_by) && msg.read_by.length > 0,
+            // my meesage has been read by others if not my message false
+            been_read: msg.sender?.toString() === userId ? false : (Array.isArray(msg.read_by) && msg.read_by.length > 0),
             edited: msg.edited || false,
             timestamp: msg.timestamp
         }));
-
         // Mark unread messages as read
         const unreadMessages = messages.filter(
             msg => !Array.isArray(msg.read_by) || !msg.read_by.includes(userId) && msg.sender?.toString() !== userId

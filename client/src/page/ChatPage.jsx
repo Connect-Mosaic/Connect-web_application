@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css'; // For icons if needed
 import ChatSidebar from "../components/ChatSidebar.jsx";
@@ -21,10 +21,27 @@ function ChatPage() {
   const [newChatName, setNewChatName] = useState("");
   const [newChatParticipants, setNewChatParticipants] = useState("");
 
-  const messagesEndRef = useRef(null);
-  const prevMessageLengthRef = useRef(0); // Track previous message length for conditional scrolling
+  const chatContainerRef = useRef(null); // Ref for the scrollable chat container
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?._id;
+
+  // Memoized scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    const container = chatContainerRef.current;
+    if (container) {
+      // Use setTimeout to ensure DOM has updated
+      setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+      }, 0);
+    }
+  }, []);
+
+  // Auto-scroll to bottom using useLayoutEffect for synchronous DOM access
+  useLayoutEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages, scrollToBottom]);
 
   // Fetch conversations on mount with polling (optimized interval)
   useEffect(() => {
@@ -47,7 +64,7 @@ function ChatPage() {
     };
 
     fetchConversations();
-    const interval = setInterval(fetchConversations, 10000); // Increased to 10s to reduce calls
+    const interval = setInterval(fetchConversations, 5000); // Increased to 5s to reduce calls
     return () => {
       isMounted = false;
       clearInterval(interval);
@@ -74,15 +91,15 @@ function ChatPage() {
         if (isMounted) {
           setMessages(normalizedMessages);
 
-          // Build users map dynamically
+          // Build users map dynamically (immutable update)
           const senderIds = [...new Set(normalizedMessages.map((m) => m.sender))];
-          const map = { ...usersMap };
+          const newUsersMap = { ...usersMap };
           senderIds.forEach((id) => {
-            if (!map[id]) {
-              map[id] = id === userId ? "You" : `User ${id.slice(-4)}`;
+            if (!newUsersMap[id]) {
+              newUsersMap[id] = id === userId ? "You" : `User ${id.slice(-4)}`;
             }
           });
-          setUsersMap(map);
+          setUsersMap(newUsersMap);
         }
       } catch (err) {
         console.error("Error fetching messages:", err);
@@ -91,7 +108,7 @@ function ChatPage() {
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 3000); // Increased to 3s
+    const interval = setInterval(fetchMessages, 1000); // Increased to 1s
     return () => {
       isMounted = false;
       clearInterval(interval);
@@ -109,7 +126,7 @@ function ChatPage() {
       login_user_id: userId, // Add login_user_id for temp messages to match API structure
       content: messageContent,
       timestamp: new Date().toISOString(),
-      been_read: true,
+      been_read: false,
       edited: false,
       failed: false,
     };
@@ -159,15 +176,6 @@ function ChatPage() {
     }
   };
 
-  // Auto scroll to bottom ONLY when new messages arrive (confined to chat window)
-  useEffect(() => {
-    const currentLength = messages.length;
-    if (currentLength > prevMessageLengthRef.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-    prevMessageLengthRef.current = currentLength;
-  }, [messages.length]);
-
   // Find current conversation for sidebar and chat window
   const currentConversation = conversations.find((conv) => conv.conversation_id === conversationId);
 
@@ -196,13 +204,16 @@ function ChatPage() {
         <div className="flex-grow-1 d-flex flex-column overflow-hidden">
           {conversationId ? (
             <>
-              <div className="flex-grow-1 overflow-auto p-3 bg-light position-relative" style={{ backgroundColor: '#e3f2fd' }}>
+              <div
+                ref={chatContainerRef}
+                className="flex-grow-1 overflow-auto p-3 bg-light position-relative"
+                style={{ backgroundColor: '#e3f2fd' }}
+              >
                 <ChatWindow
                   messages={messages}
                   usersMap={usersMap}
                   currentConversation={currentConversation}
                 />
-                <div ref={messagesEndRef} />
               </div>
 
               {/* Input */}

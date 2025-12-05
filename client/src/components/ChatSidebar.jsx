@@ -118,7 +118,7 @@ function ChatSidebar({ conversations, onSelectConversation, onCreateConversation
   };
 
   return (
-    <div className="d-flex flex-column h-100 bg-light p-3">
+    <div className="d-flex flex-column h-100 bg-light p-3 mt-3">
       {/* Header */}
       <h5 className="mb-3 fw-bold">Chats</h5>
 
@@ -146,7 +146,7 @@ function ChatSidebar({ conversations, onSelectConversation, onCreateConversation
               const hasUnread = conv.unread_count > 0;
 
               return (
-                <li key={convId} className={`p-2 rounded mb-2 cursor-pointer ${isActive ? 'bg-primary-subtle' : 'bg-light'}`} onClick={() => onSelectConversation(convId)}>
+                <li key={convId} className={`p-2 rounded mb-2 cursor-pointer ${isActive ? 'bg-primary-subtle' : 'bg-light'} border`} onClick={() => onSelectConversation(convId)}>
                   <div className="d-flex align-items-start">
                     {/* Avatar */}
                     <div className="me-3 position-relative flex-shrink-0">

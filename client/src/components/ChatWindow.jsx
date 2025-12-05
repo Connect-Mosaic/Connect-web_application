@@ -1,8 +1,19 @@
 // components/ChatWindow.jsx
-import React from "react";
+import React, { useRef, useLayoutEffect } from "react";
 
 function ChatWindow({ messages, usersMap, currentConversation }) {
   const safeMessages = Array.isArray(messages) ? messages : [];
+  const chatRef = useRef(null); // Ref for the scrollable container
+
+  // Auto-scroll to bottom when messages change
+  useLayoutEffect(() => {
+    if (chatRef.current) {
+      // Use setTimeout to ensure DOM has updated
+      setTimeout(() => {
+        chatRef.current.scrollTop = chatRef.current.scrollHeight;
+      }, 0);
+    }
+  }, [messages]);
 
   if (safeMessages.length === 0) {
     return (
@@ -13,7 +24,7 @@ function ChatWindow({ messages, usersMap, currentConversation }) {
   }
 
   // Helper to format timestamp
-  const formatTimestamp = (timestamp, showSeen = false) => {
+  const formatTimestamp = (timestamp, showSeen = false, beenRead = false) => {
     if (!timestamp) return "";
     const date = new Date(timestamp);
     const timeStr = date.toLocaleTimeString([], {
@@ -21,12 +32,16 @@ function ChatWindow({ messages, usersMap, currentConversation }) {
       minute: '2-digit',
       hour12: true
     });
-    const seenStr = showSeen ? " • Seen" : "";
+    const seenStr = showSeen ? beenRead ? " • Seen" : "" : "";
     return `${timeStr}${seenStr}`;
   };
 
   return (
-    <div className="d-flex flex-column h-100 p-2 overflow-auto chat-window" style={{ backgroundColor: '#e3f2fd' }}> {/* 改成淺藍色背景 */}
+    <div
+      ref={chatRef}
+      className="d-flex flex-column h-100 p-2 overflow-auto chat-window"
+      style={{ backgroundColor: '#e3f2fd' }}
+    >
       {/* Chat Header - Only show if currentConversation provided */}
       {currentConversation && (
         <div className="d-flex align-items-center p-2 border-bottom bg-white rounded mb-2 mt-1">
@@ -47,9 +62,11 @@ function ChatWindow({ messages, usersMap, currentConversation }) {
         // Unique key: server message_id > temp_id > fallback
         const key = msg.message_id || msg.temp_id || `msg-${Date.now()}-${Math.random()}-${index}`;
 
-        const isOwnMessage = msg.sender === msg.login_user_id; // 比對 sender 和 login_user_id
+        const isOwnMessage = msg.sender === msg.login_user_id;
         const senderName = usersMap[msg.sender] || (isOwnMessage ? "You" : `User ${msg.sender.slice(-4)}`);
         const showSeen = isOwnMessage && msg.been_read;
+        const beenRead = msg.been_read;
+
 
         return (
           <div
@@ -57,7 +74,7 @@ function ChatWindow({ messages, usersMap, currentConversation }) {
             className={`mb-2 d-flex ${isOwnMessage ? "justify-content-end" : "justify-content-start"} mt-1`}
           >
             <div
-              className={`p-2 rounded-pill position-relative ${isOwnMessage ? "bg-primary text-white" : "bg-white border shadow-sm"}`}
+              className={`p-3 rounded-pill position-relative ${isOwnMessage ? "bg-primary text-white" : "bg-white border shadow-sm"}`}
               style={{
                 maxWidth: "70%",
                 wordWrap: "break-word",
@@ -66,7 +83,7 @@ function ChatWindow({ messages, usersMap, currentConversation }) {
             >
               <div className="small fw-medium">{msg.content}</div>
               <div className={`mt-1 small opacity-75 text-end ${isOwnMessage ? "" : "text-start"}`}>
-                {formatTimestamp(msg.timestamp, showSeen)}
+                {formatTimestamp(msg.timestamp, showSeen, beenRead)}
                 {msg.edited && <span className="ms-1">(edited)</span>}
                 {msg.failed && <span className="text-danger ms-1">(failed)</span>}
                 {msg.sent && <span className="ms-1">✓</span>}
