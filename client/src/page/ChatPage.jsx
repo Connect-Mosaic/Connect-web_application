@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css'; // For icons if needed
 import ChatSidebar from "../components/ChatSidebar.jsx";
 import ChatWindow from "../components/ChatWindow.jsx";
-import MessageInput from "../components/MessageInput.jsx";  // Import MessageInput
+import MessageInput from "../components/MessageInput.jsx";
 import {
   getMessages,
   sendMessage,
   getUserConversations,
-  createConversation, // Import the createConversation function
+  createConversation,
 } from "../apis/conversation";
-
-import "./ChatPage.css";
 
 function ChatPage() {
   const [conversationId, setConversationId] = useState(null);
@@ -22,20 +22,23 @@ function ChatPage() {
   const [newChatParticipants, setNewChatParticipants] = useState("");
 
   const messagesEndRef = useRef(null);
+  const prevMessageLengthRef = useRef(0); // Track previous message length for conditional scrolling
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?._id;
 
-  // Fetch conversations
+  // Fetch conversations on mount with polling (optimized interval)
   useEffect(() => {
     let isMounted = true;
     const fetchConversations = async () => {
       try {
         const res = await getUserConversations();
         const convs = Array.isArray(res?.data) ? res.data : [];
-        if (isMounted) setConversations(convs);
+        if (isMounted) {
+          setConversations(convs);
 
-        if (!conversationId && convs.length > 0) {
-          setConversationId(convs[0].conversation_id);
+          if (!conversationId && convs.length > 0) {
+            setConversationId(convs[0].conversation_id);
+          }
         }
       } catch (err) {
         console.error("Error fetching conversations:", err);
@@ -44,14 +47,14 @@ function ChatPage() {
     };
 
     fetchConversations();
-    const interval = setInterval(fetchConversations, 5000);
+    const interval = setInterval(fetchConversations, 10000); // Increased to 10s to reduce calls
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [conversationId]);
+  }, []); // No deps to run once
 
-  // Fetch messages for the selected conversation
+  // Fetch messages for the selected conversation with polling
   useEffect(() => {
     if (!conversationId) return;
 
@@ -71,13 +74,13 @@ function ChatPage() {
         if (isMounted) {
           setMessages(normalizedMessages);
 
-          // Build users map
-          const senderIds = [
-            ...new Set(normalizedMessages.map((m) => m.sender)),
-          ];
-          const map = {};
+          // Build users map dynamically
+          const senderIds = [...new Set(normalizedMessages.map((m) => m.sender))];
+          const map = { ...usersMap };
           senderIds.forEach((id) => {
-            map[id] = usersMap[id] || (id === userId ? "You" : `User ${id}`);
+            if (!map[id]) {
+              map[id] = id === userId ? "You" : `User ${id.slice(-4)}`;
+            }
           });
           setUsersMap(map);
         }
@@ -88,12 +91,12 @@ function ChatPage() {
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 1000);
+    const interval = setInterval(fetchMessages, 3000); // Increased to 3s
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [conversationId]);
+  }, [conversationId, userId]); // Deps for correctness without loop
 
   // Handle sending a message
   const handleSend = async () => {
@@ -103,6 +106,7 @@ function ChatPage() {
     const tempMessage = {
       temp_id: `temp-${Date.now()}-${Math.random()}`,
       sender: userId,
+      login_user_id: userId, // Add login_user_id for temp messages to match API structure
       content: messageContent,
       timestamp: new Date().toISOString(),
       been_read: true,
@@ -111,21 +115,19 @@ function ChatPage() {
     };
 
     setMessages((prev) => [...prev, tempMessage]);
-    setInput(""); // Clear input after sending
+    setInput("");
 
     try {
       const res = await sendMessage(conversationId, { content: messageContent });
-      const newMessage = res?.data;
-
-      if (newMessage) {
+      if (res?.success) {
+        // Update temp to sent; polling will replace with real msg
         setMessages((prev) =>
           prev.map((msg) =>
-            msg.temp_id === tempMessage.temp_id ? newMessage : msg
+            msg.temp_id === tempMessage.temp_id
+              ? { ...msg, temp_id: null, sent: true }
+              : msg
           )
         );
-        if (!usersMap[newMessage.sender]) {
-          setUsersMap((prev) => ({ ...prev, [newMessage.sender]: "You" }));
-        }
       } else {
         setMessages((prev) =>
           prev.map((msg) =>
@@ -143,86 +145,110 @@ function ChatPage() {
     }
   };
 
-  // Handle new chat modal submit
-  const handleCreateConversation = async () => {
-    const participants = newChatParticipants.split(",").map((p) => p.trim());
-    const newConversation = { name: newChatName, participants };
-
+  // Handle new chat creation
+  const handleCreateConversation = async (chatDetails) => {
     try {
-      const newConversationData = await createConversation(newConversation);
-      setConversations((prevConvs) => [newConversationData, ...prevConvs]);
-      setShowNewChatModal(false);
-      setNewChatName("");
-      setNewChatParticipants("");
+      const newConversationData = await createConversation(chatDetails);
+      setConversations((prev) => [newConversationData, ...prev]);
+      if (!conversationId) {
+        setConversationId(newConversationData.conversation_id);
+      }
     } catch (error) {
       console.error("Error creating conversation:", error);
+      alert("Failed to create conversation. Please try again.");
     }
   };
 
-  // Auto scroll to bottom when messages change
+  // Auto scroll to bottom ONLY when new messages arrive (confined to chat window)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const currentLength = messages.length;
+    if (currentLength > prevMessageLengthRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevMessageLengthRef.current = currentLength;
+  }, [messages.length]);
+
+  // Find current conversation for sidebar and chat window
+  const currentConversation = conversations.find((conv) => conv.conversation_id === conversationId);
 
   return (
-    <div className="chat-page">
-      <ChatSidebar
-        conversations={Array.isArray(conversations) ? conversations : []}
-        onSelectConversation={setConversationId}
-        onNewChatClick={() => setShowNewChatModal(true)} // Open new chat modal
-      />
+    <div className="d-flex flex-column overflow-hidden" style={{ backgroundColor: '#6f42c1', height: '85vh' }}>
+      {/* Top Navigation - Only one nav bar */}
 
-      <div className="chat-main">
-        {conversationId ? (
-          <>
-            <ChatWindow
-              messages={Array.isArray(messages) ? messages : []}
-              usersMap={usersMap}
-              userId={userId}
-            />
-            <MessageInput
-              input={input}
-              setInput={setInput}
-              handleSend={handleSend}
-            />
-            <div ref={messagesEndRef} />
-          </>
-        ) : (
-          <div className="no-conversation">Please select a conversation to start chatting.</div>
-        )}
+
+      <div className="d-flex flex-grow-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className="d-none d-lg-block col-lg-4 bg-light border-end p-0" style={{ maxWidth: '350px', overflow: 'hidden' }}>
+          <ChatSidebar
+            conversations={conversations}
+            onSelectConversation={setConversationId}
+            onCreateConversation={handleCreateConversation}
+            currentConversationId={conversationId}
+          />
+        </div>
+
+        {/* Mobile Sidebar Trigger (for responsive) */}
+        <button className="d-lg-none btn btn-link p-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#chatSidebar">
+          <i className="bi bi-list"></i>
+        </button>
+
+        {/* Main Chat Area */}
+        <div className="flex-grow-1 d-flex flex-column overflow-hidden">
+          {conversationId ? (
+            <>
+              <div className="flex-grow-1 overflow-auto p-3 bg-light position-relative" style={{ backgroundColor: '#e3f2fd' }}>
+                <ChatWindow
+                  messages={messages}
+                  usersMap={usersMap}
+                  currentConversation={currentConversation}
+                />
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <MessageInput
+                input={input}
+                setInput={setInput}
+                handleSend={handleSend}
+              />
+            </>
+          ) : (
+            <div className="d-flex justify-content-center align-items-center h-100 text-muted">
+              <div className="text-center">
+                <i className="bi bi-chat-square-text display-1 mb-3"></i>
+                <p>Select a conversation to start chatting.</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {showNewChatModal && (
-        <div className="new-chat-modal">
-          <div className="modal-content">
-            <h2>Create New Chat</h2>
-            <label>
-              Chat Name:
-              <input
-                type="text"
-                value={newChatName}
-                onChange={(e) => setNewChatName(e.target.value)}
-                placeholder="Enter chat name"
-              />
-            </label>
-            <label>
-              Participants (comma separated):
-              <input
-                type="text"
-                value={newChatParticipants}
-                onChange={(e) => setNewChatParticipants(e.target.value)}
-                placeholder="Enter participant IDs"
-              />
-            </label>
-            <button onClick={handleCreateConversation}>Create Chat</button>
-            <button onClick={() => setShowNewChatModal(false)}>Cancel</button>
-          </div>
+      {/* Offcanvas for Mobile Sidebar */}
+      <div className="offcanvas offcanvas-start d-lg-none" tabIndex="-1" id="chatSidebar" aria-labelledby="chatSidebarLabel">
+        <div className="offcanvas-header">
+          <h5 className="offcanvas-title" id="chatSidebarLabel">Chats</h5>
+          <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-      )}
+        <div className="offcanvas-body p-0">
+          <ChatSidebar
+            conversations={conversations}
+            onSelectConversation={setConversationId}
+            onCreateConversation={handleCreateConversation}
+            currentConversationId={conversationId}
+          />
+        </div>
+      </div>
+
+      {/* Bottom Social Icons - Only for mobile, non-nav */}
+      <div className="d-lg-none bg-light border-top p-2 fixed-bottom">
+        <div className="d-flex justify-content-around align-items-center">
+          <a href="#" className="text-decoration-none"><i className="bi bi-facebook fs-4"></i></a>
+          <a href="#" className="text-decoration-none"><i className="bi bi-instagram fs-4"></i></a>
+          {/* Add more icons if needed */}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default ChatPage;
-
-

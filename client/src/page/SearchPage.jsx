@@ -110,6 +110,29 @@ function SearchPage() {
     }
   };
 
+  /* ---------------- CREATE CONVERSATION & NAVIGATE ---------------- */
+  const createAndNavigateToChat = async (user) => {
+    try {
+      const payload = {
+        type: "private",
+        participants: [user._id],
+        display_name: `${user.first_name} ${user.last_name}`,
+        display_image: user.profile_picture || ""
+      };
+
+      const res = await api.post('/api/conversations', payload);
+
+      if (res.success) {
+        const convId = res.data.conversation_id || res.data._id;
+        showToast("Conversation created! Starting chat...", "success");
+        navigate(`/chat?conversation=${convId}`);
+      }
+    } catch (err) {
+      console.error("Error creating conversation:", err);
+      showToast("Failed to start chat. Please try again.", "error");
+    }
+  };
+
   /* ---------------- USER CLICK → OPEN MODAL ---------------- */
   const handleUserClick = (user) => {
     setSelectedUserId(user._id);
@@ -254,6 +277,18 @@ function SearchPage() {
                             {/* FRIEND BUTTON */}
                             <div className="divider-dot"></div>
                             {renderFriendButton(user)}
+
+
+                            <button
+                              className="action-btn message-btn ms-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                createAndNavigateToChat(user);
+                              }}
+                              title="Send Message"
+                            >
+                              <i className="bi bi-chat-dots"></i>
+                            </button>
                           </div>
 
                         </div>

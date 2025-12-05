@@ -66,6 +66,7 @@ const sendMessage = async (req, res) => {
         });
 
         const messageData = {
+            login_user_id: userId,
             message_id: message._id,
             conversation_id: message.conversation_id,
             sender: message.sender,
@@ -96,6 +97,7 @@ const getMessages = async (req, res) => {
         const messages = await Message.find({ conversation_id, deleted: false }).sort({ timestamp: 1 });
 
         const responseList = messages.map(msg => ({
+            login_user_id: userId,
             message_id: msg._id,
             conversation_id: msg.conversation_id,
             sender: msg.sender,

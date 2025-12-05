@@ -1,28 +1,30 @@
-import React from 'react';
+// components/MessageInput.jsx (New component as per import)
+import React from "react";
 
 function MessageInput({ input, setInput, handleSend }) {
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
-    <div className="message-input" style={{ marginTop: '10px' }}>
-      <input
-        type="text"
-        placeholder="Type a message..."
-        style={{ width: '350px', padding: '10px' }}
-        value={input}
-        onChange={(e) => setInput(e.target.value)} // Bind input value to the parent state
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {  // Check if Enter is pressed
-            e.preventDefault();  // Prevent default Enter action (new line)
-            handleSend();  // Send the message
-          }
-        }}
-      />
-      <button
-        onClick={handleSend}  // Trigger send on button click
-        style={{ marginLeft: '5px', padding: '5px 10px' }}
-        disabled={!input.trim()}  // Disable button if input is empty
-      >
-        Send
-      </button>
+    <div className="p-3 border-top bg-white">
+      <div className="input-group">
+        <textarea
+          className="form-control rounded-pill pe-5"
+          rows="1"
+          placeholder="Type a message..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={handleKeyPress}
+          style={{ resize: 'none' }}
+        ></textarea>
+        <button className="btn btn-link text-primary position-absolute end-0 me-3 top-50 translate-middle-y" onClick={handleSend} disabled={!input.trim()}>
+          <i className="bi bi-send-fill"></i>
+        </button>
+      </div>
     </div>
   );
 }
