@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import "./SearchPage.css";
-import { api } from "../apis/client";
 
-// ✅ Use the modal component instead of inline modal
 import FriendProfileModal from "../components/FriendProfile";
+
+// API WRAPPERS
+import {
+  sendFriendRequestApi,
+  acceptFriendRequestApi,
+  rejectFriendRequestApi,
+  cancelFriendRequestApi,
+} from "../apis/friend";
+
+import { createConversation } from "../apis/conversation";
+import { getSearchResults } from "../apis/search";
+import { createNotification } from "../apis/notification";
 
 function SearchPage() {
   const [query, setQuery] = useState("");
@@ -13,7 +23,7 @@ function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [selectedUserId, setSelectedUserId] = useState(null); // ONLY store the ID  
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
   const navigate = useNavigate();
@@ -32,18 +42,15 @@ function SearchPage() {
     }, 2500);
   };
 
-  /* ---------------- RELATIONSHIP DETECTOR ---------------- */
-  const detectRelationship = (user) => {
-    const me = JSON.parse(localStorage.getItem("user"));
-    if (!me) return "none";
 
-    const myId = me._id;
-
-    if (user.friends?.includes(myId)) return "friends";
-    if (user.friendRequests?.includes(myId)) return "pending";
-    if (user.sentRequests?.includes(myId)) return "requested";
-
-    return "none";
+  /* ---------------- UPDATE LOCAL STATE ---------------- */
+  const updateLocalRelationship = (userId, newStatus) => {
+    setResults((prev) => ({
+      ...prev,
+      users: prev.users.map((u) =>
+        u._id === userId ? { ...u, relationship: newStatus } : u
+      ),
+    }));
   };
 
   /* ---------------- SEARCH ---------------- */
@@ -60,22 +67,15 @@ function SearchPage() {
     setLoading(true);
 
     try {
-      const response = await api.get(`/api/search?q=${encodeURIComponent(trimmed)}`);
+      const response = await getSearchResults(trimmed);
 
       if (response.success) {
-        const enrichedUsers = response.data.users.map((u) => ({
-          ...u,
-          relationship: detectRelationship(u),
-        }));
-
-        const enrichedEvents = response.data.events.map((ev) => ({
-          ...ev,
-          eventState: ev.eventState || "none",
-        }));
-
         setResults({
-          users: enrichedUsers,
-          events: enrichedEvents,
+          users: response.data.users,
+          events: response.data.events.map((ev) => ({
+            ...ev,
+            eventState: ev.eventState || "none",
+          })),
         });
       } else {
         setResults({ users: [], events: [] });
@@ -87,102 +87,163 @@ function SearchPage() {
     }
   };
 
-  /* ---------------- EVENT JOIN/LEAVE ---------------- */
-  const joinEvent = async (eventId) => {
-    try {
-      const res = await api.post(`/api/events/${eventId}/join`);
-      if (res.success) {
-        showToast("Joined event!", "success");
-      }
-    } catch {
-      showToast("Failed to join event", "error");
-    }
-  };
-
-  const leaveEvent = async (eventId) => {
-    try {
-      const res = await api.post(`/api/events/${eventId}/leave`);
-      if (res.success) {
-        showToast("Left event", "warning");
-      }
-    } catch {
-      showToast("Failed to leave event", "error");
-    }
-  };
-
-  /* ---------------- CREATE CONVERSATION & NAVIGATE ---------------- */
+  /* ---------------- CHAT ---------------- */
   const createAndNavigateToChat = async (user) => {
     try {
-      const payload = {
+      await createConversation({
         type: "private",
         participants: [user._id],
-        display_name: `${user.first_name} ${user.last_name}`,
-        display_image: user.profile_picture || ""
-      };
+        display_name: "...",
+      });
 
-      const res = await api.post('/api/conversations', payload);
 
       if (res.success) {
         const convId = res.data.conversation_id || res.data._id;
-        showToast("Conversation created! Starting chat...", "success");
+        showToast("Conversation started!", "success");
         navigate(`/chat?conversation=${convId}`);
       }
     } catch (err) {
-      console.error("Error creating conversation:", err);
-      showToast("Failed to start chat. Please try again.", "error");
+      console.error("Chat error:", err);
+      showToast("Failed to start chat", "error");
     }
   };
 
-  /* ---------------- USER CLICK → OPEN MODAL ---------------- */
+  /* ============================================================
+     FRIEND REQUEST ACTIONS + NOTIFICATIONS
+  ============================================================ */
+
+  const sendFriendRequest = async (user) => {
+    try {
+      const res = await sendFriendRequestApi(user._id);
+
+      if (res.success) {
+        updateLocalRelationship(user._id, "requested");
+        showToast("Friend request sent!", "success");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to send friend request", "error");
+    }
+  };
+
+  const acceptFriendRequest = async (user) => {
+    try {
+      const res = await acceptFriendRequestApi(user._id);
+
+      if (res.success) {
+        updateLocalRelationship(user._id, "friends");
+        showToast("Friend request accepted!", "success");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to accept request", "error");
+    }
+  };
+
+  const rejectFriendRequest = async (user) => {
+    try {
+      const res = await rejectFriendRequestApi(user._id);
+
+      if (res.success) {
+        updateLocalRelationship(user._id, "none");
+        showToast("Request rejected.", "warning");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to reject request", "error");
+    }
+  };
+
+  const cancelFriendRequest = async (user) => {
+    try {
+      const res = await cancelFriendRequestApi(user._id);
+
+      if (res.success) {
+        updateLocalRelationship(user._id, "none");
+        showToast("Request canceled.", "warning");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to cancel request", "error");
+    }
+  };
+
+  /* ---------------- USER MODAL ---------------- */
   const handleUserClick = (user) => {
     setSelectedUserId(user._id);
     setShowModal(true);
   };
 
-  const handleEventClick = (event) => navigate(`/events/${event._id}`);
-
-  /* ---------------- RENDER FRIEND BUTTON ---------------- */
+  /* ---------------- FRIEND BUTTON UI ---------------- */
   const renderFriendButton = (user) => {
-    const s = user.relationship || "none";
+    const status = user.relationship;
 
-    if (s === "friends")
+    if (status === "friends") {
       return (
         <button className="action-btn friend-btn">
           <i className="bi bi-person-check-fill"></i>
         </button>
       );
+    }
 
-    if (s === "requested")
+    if (status === "requested") {
       return (
-        <button className="action-btn friend-btn">
+        <button
+          className="action-btn friend-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            cancelFriendRequest(user);
+          }}
+        >
           <i className="bi bi-hourglass-split"></i>
         </button>
       );
+    }
 
-    if (s === "pending")
+    if (status === "pending") {
       return (
         <div className="friend-action-group">
-          <button className="action-btn friend-btn accept">
+          <button
+            className="action-btn friend-btn accept"
+            onClick={(e) => {
+              e.stopPropagation();
+              acceptFriendRequest(user);
+            }}
+          >
             <i className="bi bi-check-lg"></i>
           </button>
-          <button className="action-btn friend-btn reject">
+          <button
+            className="action-btn friend-btn reject"
+            onClick={(e) => {
+              e.stopPropagation();
+              rejectFriendRequest(user);
+            }}
+          >
             <i className="bi bi-x-lg"></i>
           </button>
         </div>
       );
+    }
 
     return (
-      <button className="action-btn friend-btn">
+      <button
+        className="action-btn friend-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          sendFriendRequest(user);
+        }}
+      >
         <i className="bi bi-person-plus"></i>
       </button>
     );
   };
 
-  /* ---------------- RENDER ---------------- */
+  /* ---------------- MAIN RENDER ---------------- */
   const total = results.users.length + results.events.length;
 
   return (
     <div className="search-page">
+      {/* HEADER */}
       <div className="search-header">
         <h3 className="search-title">Search Results</h3>
 
@@ -195,7 +256,11 @@ function SearchPage() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && performSearch(query)}
           />
-          <button className="search-bar-button" onClick={() => performSearch(query)}>
+
+          <button
+            className="search-bar-button"
+            onClick={() => performSearch(query)}
+          >
             Search
           </button>
         </div>
@@ -208,7 +273,7 @@ function SearchPage() {
         )}
       </div>
 
-      {/* ------------ RESULTS ------------- */}
+      {/* RESULTS */}
       <div className="result-container">
         {loading ? (
           <p className="search-loading">Searching...</p>
@@ -220,10 +285,12 @@ function SearchPage() {
           <div className="search-content">
             <div className="search-columns">
 
-              {/* ------------ USERS ------------- */}
+              {/* USERS */}
               <section className="search-column">
                 <h4 className="column-title">People</h4>
-                <p className="column-subtitle">Students who match your interests</p>
+                <p className="column-subtitle">
+                  Students who match your interests
+                </p>
 
                 {results.users.length > 0 ? (
                   <div className="search-results">
@@ -234,8 +301,6 @@ function SearchPage() {
                         onClick={() => handleUserClick(user)}
                       >
                         <div className="result-content">
-
-                          {/* IMAGE */}
                           <div className="result-left">
                             <div className="result-icon-container">
                               {user.profile_picture ? (
@@ -249,12 +314,10 @@ function SearchPage() {
                               )}
                             </div>
 
-                            {/* MAIN INFO */}
                             <div className="result-main-container">
                               <h4 className="result-title">
                                 {user.first_name} {user.last_name}
                               </h4>
-
                               {user.email && (
                                 <p className="result-subtitle">
                                   <i className="bi bi-envelope"></i> {user.email}
@@ -263,34 +326,34 @@ function SearchPage() {
                             </div>
                           </div>
 
-                          {/* RIGHT SIDE */}
                           <div className="result-extra-container">
-                            {/* INTEREST TAGS */}
+                            {/* INTERESTS */}
                             {user.interests?.length > 0 && (
                               <div className="result-interests">
                                 {user.interests.slice(0, 3).map((int, i) => (
-                                  <span key={i} className="interest-chip">{int}</span>
+                                  <span key={i} className="interest-chip">
+                                    {int}
+                                  </span>
                                 ))}
                               </div>
                             )}
 
-                            {/* FRIEND BUTTON */}
                             <div className="divider-dot"></div>
+
+                            {/* FRIEND BUTTON */}
                             {renderFriendButton(user)}
 
-
+                            {/* CHAT BUTTON */}
                             <button
                               className="action-btn message-btn ms-1"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 createAndNavigateToChat(user);
                               }}
-                              title="Send Message"
                             >
                               <i className="bi bi-chat-dots"></i>
                             </button>
                           </div>
-
                         </div>
                       </div>
                     ))}
@@ -300,10 +363,12 @@ function SearchPage() {
                 )}
               </section>
 
-              {/* ------------ EVENTS ------------- */}
+              {/* EVENTS */}
               <section className="search-column">
                 <h4 className="column-title">Events</h4>
-                <p className="column-subtitle">Upcoming events that match your interests</p>
+                <p className="column-subtitle">
+                  Upcoming events that match your interests
+                </p>
 
                 {results.events.length > 0 ? (
                   <div className="search-results">
@@ -311,7 +376,7 @@ function SearchPage() {
                       <div
                         key={ev._id}
                         className="search-result-card"
-                        onClick={() => handleEventClick(ev)}
+                        onClick={() => navigate(`/events/${ev._id}`)}
                       >
                         <div className="result-content">
                           <div className="result-left">
@@ -348,9 +413,7 @@ function SearchPage() {
         )}
       </div>
 
-      {/* ===============================
-            FRIEND PROFILE MODAL
-          =============================== */}
+      {/* MODAL */}
       {showModal && selectedUserId && (
         <FriendProfileModal
           userId={selectedUserId}

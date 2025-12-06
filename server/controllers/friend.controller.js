@@ -1,9 +1,38 @@
 import User from "../models/user.model.js";
 import { successResponse, errorResponse } from "../helpers/apiResponse.js";
+import Notification from "../models/notification.model.js";
 
 function idsEqual(a, b) {
   return a.toString() === b.toString();
 }
+
+/* ============================================================
+    Create Notification Helper
+============================================================ */
+async function createNotification({
+  userId,
+  title,
+  message,
+  type = "info",
+  link = null,
+  meta = {}
+}) {
+  try {
+    await Notification.create({
+      userId,
+      title,
+      message,
+      type,
+      link,
+      meta,
+      isRead: false,
+      created_at: Math.floor(Date.now() / 1000)
+    });
+  } catch (err) {
+    console.error("Notification creation failed:", err);
+  }
+}
+
 
 /* ============================================================
     SEND FRIEND REQUEST
@@ -13,11 +42,11 @@ export const sendRequest = async (req, res) => {
     const senderId = req.auth.userId;
     const receiverId = req.params.userId;
 
-    if (idsEqual(senderId, receiverId))
-      return res.json(errorResponse("You cannot add yourself."));
+    const sender = await User.findById(senderId)
+      .select("first_name last_name friends sentRequests receivedRequests");
 
-    const sender = await User.findById(senderId);
-    const receiver = await User.findById(receiverId);
+    const receiver = await User.findById(receiverId)
+      .select("friends sentRequests receivedRequests");
 
     if (!receiver)
       return res.json(errorResponse("User not found."));
@@ -37,12 +66,28 @@ export const sendRequest = async (req, res) => {
     await sender.save();
     await receiver.save();
 
-    return res.json(successResponse("Friend request sent."));
+    /* ⭐ CREATE FRIEND REQUEST NOTIFICATION */
+    await createNotification({
+      userId: receiverId,
+      title: "New Friend Request",
+      message: `${sender.first_name} ${sender.last_name} sent you a friend request.`,
+      type: "friend_request",                // ★ REQUIRED FOR UI BUTTONS
+      link: null,                            // no redirect
+      meta: { senderId }                     // sender ID needed in Accept/Decline
+    });
+
+    return res.json(successResponse("Friend request sent.", {
+      meId: senderId,
+      meName: `${sender.first_name} ${sender.last_name}`
+    }));
+
   } catch (err) {
     console.error("sendRequest error:", err);
     return res.json(errorResponse("Failed to send request."));
   }
 };
+
+
 
 /* ============================================================
     CANCEL (WITHDRAW) FRIEND REQUEST
@@ -93,6 +138,16 @@ export const acceptRequest = async (req, res) => {
     await receiver.save();
     await sender.save();
 
+    /* ⭐ NOTIFY ORIGINAL SENDER */
+    await createNotification({
+      userId: senderId,
+      title: "Friend Request Accepted",
+      message: `${receiver.first_name} ${receiver.last_name} accepted your friend request.`,
+      type: "success",
+      link: `/profile/${receiverId}`,
+      meta: { friendId: receiverId }
+    });
+
     return res.json(successResponse("Friend request accepted."));
   } catch (err) {
     console.error("acceptRequest error:", err);
@@ -116,6 +171,16 @@ export const rejectRequest = async (req, res) => {
 
     await receiver.save();
     await sender.save();
+
+    /* ⭐ NOTIFY ORIGINAL SENDER */
+    await createNotification({
+      userId: senderId,
+      title: "Friend Request Declined",
+      message: `${receiver.first_name} ${receiver.last_name} declined your friend request.`,
+      type: "warning",
+      link: "/friends",
+      meta: { rejectedBy: receiverId }
+    });
 
     return res.json(successResponse("Friend request rejected."));
   } catch (err) {

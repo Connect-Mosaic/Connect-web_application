@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { NavLink } from "react-router-dom";
 import "./Navbar.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import NotificationBell from "../components/NotificationBell";
+
 
 function Navbar({ isLoggedIn, onLogout }) {
 
@@ -82,28 +84,7 @@ function Navbar({ isLoggedIn, onLogout }) {
       </div>
 
       <div className="navbar-right" ref={notifRef}>
-        <div className="notification-wrapper">
-          <button
-            className="notification-btn"
-            onClick={() => setShowNotif(!showNotif)}
-          >
-            <i className="bi bi-bell"></i>
-            {unreadCount > 0 && (
-              <span className="notification-badge">{unreadCount}</span>
-            )}
-          </button>
-
-          {showNotif && (
-            <div className="notification-dropdown">
-              {notifications.map((notif, idx) => (
-                <div key={idx} className="notification-item">
-                  <p>{notif.message}</p>
-                  <span className="notif-time">{notif.time}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <NotificationBell userId={userId} />
 
         {!isLoggedIn ? (
           <NavLink to="/login" className="nav-link">Login</NavLink>

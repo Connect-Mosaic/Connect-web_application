@@ -11,12 +11,15 @@ async function getRelationship(currentUser, targetId) {
     if (!currentUser) return "none";
     if (currentUser._id.toString() === targetId.toString()) return "self";
 
-    if (currentUser.friends?.includes(targetId)) return "friends";
-    if (currentUser.sentRequests?.includes(targetId)) return "requested";
-    if (currentUser.receivedRequests?.includes(targetId)) return "pending";
+    const t = targetId.toString();
+
+    if (currentUser.friends?.some(id => id.toString() === t)) return "friends";
+    if (currentUser.sentRequests?.some(id => id.toString() === t)) return "requested";
+    if (currentUser.receivedRequests?.some(id => id.toString() === t)) return "pending";
 
     return "none";
 }
+
 
 /* ================================================================
     SEARCH CONTROLLER — FIXED WITH RELATIONSHIPS + EVENT JOIN STATE

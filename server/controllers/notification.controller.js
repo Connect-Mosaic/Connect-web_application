@@ -5,15 +5,19 @@ import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js";
 
 const createNotification = async (req, res) => {
+    console.log("BODY RECEIVED:", req.body);
+    console.log("USER AUTH:", req.auth);
     try {
-        const { title, message, type } = req.body;
-        const userId = req.auth.userId;
+        const { title, message, type, link, meta } = req.body;
+        const userId = req.body.userId || req.auth.userId;
         console.log('[Notification] createNotification called', { userId, title, message, type });
         const notification = new Notification({
             userId,
             title,
             message,
-            type: type || 'info',
+            type: type || "info",
+            link: link || null,
+            meta: meta || {},
             isRead: false
         });
         await notification.save();
@@ -28,22 +32,27 @@ const createNotification = async (req, res) => {
 
 const getNotifications = async (req, res) => {
     try {
+        // receiverId = the person who should RECEIVE this notification
         const userId = req.auth.userId;
+
+
         console.log('[Notification] getNotifications called by user id:', userId);
         const notifications = await Notification.find({ userId: userId })
             .sort({ createdAt: -1 });
+        console.log("DB notifications found:", notifications);
+
 
         const responseList = notifications.map(notif => ({
             notification_id: notif._id,
             title: notif.title,
             message: notif.message,
             type: notif.type,
+            link: notif.link,
+            meta: notif.meta,
             is_read: notif.isRead,
-            created_at: notif.created_at,
-            updated_at: notif.updated_at
+            created_at: notif.createdAt,
+            updated_at: notif.updatedAt
         }));
-
-
         return res.json(successResponse('Notifications retrieved successfully', { notifications: responseList }));
     } catch (error) {
         console.error('[Notification] Error fetching notifications:', error);
@@ -68,7 +77,7 @@ const getNotificationById = async (req, res) => {
 
 const markAsRead = async (req, res) => {
     try {
-        const userId = req.auth.userId;
+        const userId = req.body.userId || req.auth.userId;
         const { notification_id } = req.params;
         if (!notification_id) return res.status(400).json(errorResponse('Notification id is required'));
 
@@ -89,7 +98,7 @@ const markAsRead = async (req, res) => {
 
 const markAllRead = async (req, res) => {
     try {
-        const userId = req.auth.userId;
+        const userId = req.body.userId || req.auth.userId;
         const result = await Notification.updateMany(
             { userId: userId, isRead: false },
             { $set: { isRead: true } }
@@ -104,7 +113,7 @@ const markAllRead = async (req, res) => {
 
 const deleteNotification = async (req, res) => {
     try {
-        const userId = req.auth.userId;
+        const userId = req.body.userId || req.auth.userId;
         const { notification_id } = req.params;
         if (!notification_id) return res.status(400).json(errorResponse('Notification id is required'));
 
