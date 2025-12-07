@@ -90,10 +90,10 @@ function SearchPage() {
   /* ---------------- CHAT ---------------- */
   const createAndNavigateToChat = async (user) => {
     try {
-      await createConversation({
+      const res = await createConversation({
         type: "private",
         participants: [user._id],
-        display_name: "...",
+        display_name: `${user.first_name} ${user.last_name}`,
       });
 
 

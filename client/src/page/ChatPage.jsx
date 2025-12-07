@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams } from 'react-router-dom'; // For handling URL query params
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css'; // For icons if needed
 import ChatSidebar from "../components/ChatSidebar.jsx";
@@ -12,114 +13,141 @@ import {
 } from "../apis/conversation";
 
 function ChatPage() {
-  // 從 localStorage 恢復上次選擇的對話 ID
+  const [searchParams] = useSearchParams(); // Hook to read URL query params
   const [conversationId, setConversationId] = useState(() => {
-    return localStorage.getItem('selectedConversationId') || null;
+    // Initial state: Prioritize URL param, then localStorage
+    const urlConvId = searchParams.get('conversation');
+    const savedId = localStorage.getItem('selectedConversationId');
+    return urlConvId || savedId || null;
   });
   const [messages, setMessages] = useState([]);
   const [usersMap, setUsersMap] = useState({});
   const [input, setInput] = useState("");
   const [conversations, setConversations] = useState([]);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(true); // New: Track loading state
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newChatName, setNewChatName] = useState("");
   const [newChatParticipants, setNewChatParticipants] = useState("");
 
-  const chatContainerRef = useRef(null); // 如果還用在 ChatPage，否則可移除
+  const chatContainerRef = useRef(null);
+  const hasValidatedRef = useRef(false); // New: Prevent repeated invalidation during manual switches
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?._id;
 
-  // 存選擇到 localStorage
+  // Effect to sync conversationId to localStorage
   useEffect(() => {
     if (conversationId) {
       localStorage.setItem('selectedConversationId', conversationId);
     }
   }, [conversationId]);
 
-  // 初次載入時處理自動選擇（只跑一次，polling 不觸發）
+  // Effect to handle URL param changes (e.g., browser navigation)
   useEffect(() => {
-    if (conversations.length > 0 && !conversationId) {
-      // 檢查存的 ID 是否有效
-      const savedId = localStorage.getItem('selectedConversationId');
-      const validSaved = savedId && conversations.find(conv => conv.conversation_id === savedId);
-      const targetId = validSaved ? savedId : conversations[0].conversation_id;
-      setConversationId(targetId);
-    } else if (conversationId && conversations.length > 0) {
-      // 如果存的 ID 失效，fallback 到第一個
-      const isValid = conversations.find(conv => conv.conversation_id === conversationId);
-      if (!isValid) {
-        const firstId = conversations[0].conversation_id;
-        setConversationId(firstId);
-      }
+    const urlConvId = searchParams.get('conversation');
+    if (urlConvId && urlConvId !== conversationId) {
+      setConversationId(urlConvId);
+      hasValidatedRef.current = false; // Reset validation for new URL
     }
-  }, [conversations, conversationId]); // 依賴 conversations 變化，但只在初次有值時有效
+  }, [searchParams]); // Removed conversationId dep to avoid loops
 
-  // Fetch conversations on mount with polling (只更新列表，不碰選擇)
+  // Effect to auto-select or validate conversation when conversations load
+  useEffect(() => {
+    if (conversations.length === 0 || isLoadingConversations) return;
+
+    setIsLoadingConversations(false);
+
+    if (!conversationId) {
+      // Auto-select first if no ID
+      const targetId = conversations[0]?.conversation_id;
+      if (targetId) {
+        setConversationId(targetId);
+      }
+      return;
+    }
+
+    // Validate only once (e.g., on initial load or URL change)
+    if (hasValidatedRef.current) return;
+
+    const isValid = conversations.find(conv => conv.conversation_id === conversationId);
+    if (!isValid) {
+      const firstId = conversations[0]?.conversation_id;
+      setConversationId(firstId);
+    }
+
+    hasValidatedRef.current = true;
+  }, [conversations, isLoadingConversations, conversationId]); // Include isLoading to wait for fetch
+
+  // Fetch user conversations periodically
   useEffect(() => {
     let isMounted = true;
     const fetchConversations = async () => {
       try {
+        setIsLoadingConversations(true);
         const res = await getUserConversations();
         const convs = Array.isArray(res?.data) ? res.data : [];
         if (isMounted) {
-          setConversations(convs); // 只更新列表
+          setConversations(convs);
         }
       } catch (err) {
         console.error("Error fetching conversations:", err);
         if (isMounted) setConversations([]);
+      } finally {
+        if (isMounted) {
+          setIsLoadingConversations(false);
+        }
       }
     };
 
     fetchConversations();
-    const interval = setInterval(fetchConversations, 10000); // polling 只刷新數據
+    const interval = setInterval(fetchConversations, 10000);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, []); // 空依賴，只跑一次初始化
+  }, []);
 
-  // Fetch messages ... (不變)
+  // Fetch messages for the current conversation periodically
+  const fetchMessages = useCallback(async () => {
+    if (!conversationId) return;
+    try {
+      const res = await getMessages(conversationId);
+      const fetchedMessages = Array.isArray(res?.data) ? res.data : [];
+
+      const normalizedMessages = fetchedMessages.map((msg) => ({
+        ...msg,
+        message_id: msg.message_id || `msg-${Date.now()}-${Math.random()}`,
+        timestamp: msg.timestamp || new Date().toISOString(),
+      }));
+
+      setMessages(normalizedMessages);
+    } catch (err) {
+      console.error("Error fetching messages:", err);
+      setMessages([]);
+    }
+  }, [conversationId]);
+
   useEffect(() => {
     if (!conversationId) return;
+    fetchMessages(); // Initial fetch
+    const interval = setInterval(fetchMessages, 10000);
+    return () => clearInterval(interval);
+  }, [conversationId, fetchMessages]);
 
-    let isMounted = true;
-
-    const fetchMessages = async () => {
-      try {
-        const res = await getMessages(conversationId);
-        const fetchedMessages = Array.isArray(res?.data) ? res.data : [];
-
-        const normalizedMessages = fetchedMessages.map((msg) => ({
-          ...msg,
-          message_id: msg.message_id || `msg-${Date.now()}-${Math.random()}`,
-          timestamp: msg.timestamp || new Date().toISOString(),
-        }));
-
-        if (isMounted) {
-          setMessages(normalizedMessages);
-
-          // Build users map dynamically (immutable update)
-          const senderIds = [...new Set(normalizedMessages.map((m) => m.sender))];
-          const newUsersMap = { ...usersMap };
-          senderIds.forEach((id) => {
-            if (!newUsersMap[id]) {
-              newUsersMap[id] = id === userId ? "You" : `User ${id.slice(-4)}`;
-            }
-          });
-          setUsersMap(newUsersMap);
-        }
-      } catch (err) {
-        console.error("Error fetching messages:", err);
-        if (isMounted) setMessages([]);
+  // Update usersMap dynamically based on messages
+  useEffect(() => {
+    const senderIds = [...new Set(messages.map((m) => m.sender))];
+    const newUsersMap = { ...usersMap };
+    let hasUpdate = false;
+    senderIds.forEach((id) => {
+      if (!newUsersMap[id]) {
+        newUsersMap[id] = id === userId ? "You" : `User ${id.slice(-4)}`;
+        hasUpdate = true;
       }
-    };
-
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 3000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [conversationId, userId, usersMap]);
+    });
+    if (hasUpdate) {
+      setUsersMap(newUsersMap);
+    }
+  }, [messages, userId, usersMap]); // Added usersMap dep if needed for reactivity
 
   const handleSend = async () => {
     const messageContent = input.trim();
@@ -188,7 +216,11 @@ function ChatPage() {
         <div className="d-none d-lg-block col-lg-4 bg-light border-end p-0" style={{ maxWidth: '350px', overflow: 'hidden' }}>
           <ChatSidebar
             conversations={conversations}
-            onSelectConversation={setConversationId}
+            onSelectConversation={(newId) => {
+              console.log('Switching to conversation:', newId); // Debug log
+              setConversationId(newId);
+              hasValidatedRef.current = true; // Mark as manual switch
+            }}
             onCreateConversation={handleCreateConversation}
             currentConversationId={conversationId}
           />
@@ -201,10 +233,10 @@ function ChatPage() {
 
         {/* Main Chat Area */}
         <div className="flex-grow-1 d-flex flex-column overflow-hidden">
-          {conversationId ? (
+          {conversationId && !isLoadingConversations ? (
             <>
               <div
-                // ref={chatContainerRef} // 如果移到 ChatWindow，可移除
+                // ref={chatContainerRef} // If moved to ChatWindow, can remove
                 className="flex-grow-1 overflow-auto p-3 bg-light position-relative"
                 style={{ backgroundColor: '#e3f2fd' }}
               >
@@ -225,7 +257,7 @@ function ChatPage() {
             <div className="d-flex justify-content-center align-items-center h-100 text-muted">
               <div className="text-center">
                 <i className="bi bi-chat-square-text display-1 mb-3"></i>
-                <p>Select a conversation to start chatting.</p>
+                <p>{isLoadingConversations ? 'Loading conversations...' : 'Select a conversation to start chatting.'}</p>
               </div>
             </div>
           )}
@@ -241,7 +273,11 @@ function ChatPage() {
         <div className="offcanvas-body p-0">
           <ChatSidebar
             conversations={conversations}
-            onSelectConversation={setConversationId}
+            onSelectConversation={(newId) => {
+              console.log('Mobile switching to conversation:', newId); // Debug log
+              setConversationId(newId);
+              hasValidatedRef.current = true; // Mark as manual switch
+            }}
             onCreateConversation={handleCreateConversation}
             currentConversationId={conversationId}
           />

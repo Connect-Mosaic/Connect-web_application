@@ -21,6 +21,16 @@ const createConversation = async (req, res) => {
             participants.push(userId);
         }
 
+        // dont allow duplicate conversation participants
+        const existingConversation = await Conversation.findOne({
+            type,
+            'participants.user_id': { $all: participants }
+        });
+        if (existingConversation) {
+            console.warn('createConversation failed - duplicate conversation', { conversation_id: existingConversation._id });
+            return res.json(successResponse("A conversation with the same participants already exists", { conversation_id: existingConversation._id }));
+        }
+
         const conversation = await Conversation.create({
             type,
             owner_id: userId,
@@ -39,11 +49,11 @@ const createConversation = async (req, res) => {
                 isRead: false
             });
             await notification.save();
-            console.info('Notification created for participant', { participantId, conversationId: conversation._id });
+            console.info('Notification created for participant', { participantId, conversation_id: conversation._id });
         }
 
-        console.info('createConversation success', { conversationId: conversation._id });
-        res.json(successResponse("Conversation created successfully", { conversationId: conversation._id }));
+        console.info('createConversation success', { conversation_id: conversation._id });
+        res.json(successResponse("Conversation created successfully", { conversation_id: conversation._id }));
     } catch (err) {
         console.error('createConversation error', err);
         res.json(errorResponse(err.message));
