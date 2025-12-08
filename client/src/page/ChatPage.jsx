@@ -33,14 +33,14 @@ function ChatPage() {
   const hasValidatedRef = useRef(false); // New: Prevent repeated invalidation during manual switches
   const jwt = JSON.parse(localStorage.getItem("jwt"));
   const jwtRaw = localStorage.getItem("jwt");
-    let user = null;
-    let userId = null;
+  let user = null;
+  let userId = null;
 
-    if (jwtRaw) {
+  if (jwtRaw) {
     const parsed = JSON.parse(jwtRaw);
     user = parsed.user || null;
     userId = user?.id || user?._id || null;
-    }
+  }
 
   // Effect to sync conversationId to localStorage
   useEffect(() => {
@@ -201,41 +201,41 @@ function ChatPage() {
       );
     }
   };
-  
-    const handleCreateConversation = async ({ participant }) => {
+
+  const handleCreateConversation = async ({ participant }) => {
     try {
-        const payload = {
+      const payload = {
         type: "private",
         participants: [participant], // the backend demands an array
         display_name: null
-        };
+      };
 
-        const res = await createConversation(payload);
-        const newConv = res?.data?.data || res?.data || res;
+      const res = await createConversation(payload);
+      const newConv = res?.data?.data || res?.data || res;
 
-        if (!newConv?.conversation_id) {
+      if (!newConv?.conversation_id) {
         console.error("Invalid conversation response:", newConv);
         return;
-        }
+      }
 
-        setConversations(prev => {
+      setConversations(prev => {
         const exists = prev.some(c => c.conversation_id === newConv.conversation_id);
         return exists ? prev : [newConv, ...prev];
-        });
+      });
 
-        setConversationId(newConv.conversation_id);
+      setConversationId(newConv.conversation_id);
 
     } catch (error) {
-        console.error("Error creating conversation:", error);
+      console.error("Error creating conversation:", error);
     }
-    };
+  };
 
 
 
   const currentConversation = conversations.find((conv) => conv.conversation_id === conversationId);
 
   return (
-    <div className="d-flex flex-column overflow-hidden" style={{ backgroundColor: '#6f42c1', height: '85vh' }}>
+    <div className="d-flex flex-column overflow-hidden" style={{ backgroundColor: '#e3f2fd', height: '85vh' }}>
       <div className="d-flex flex-grow-1 overflow-hidden">
         {/* Sidebar */}
         <div className="d-none d-lg-block col-lg-4 bg-light border-end p-0" style={{ maxWidth: '350px', overflow: 'hidden' }}>
@@ -248,7 +248,7 @@ function ChatPage() {
             onCreateConversation={handleCreateConversation}
             currentConversationId={conversationId}
             friends={user?.friends || []}
-            currentUserId={userId} 
+            currentUserId={userId}
           />
         </div>
 
@@ -306,7 +306,7 @@ function ChatPage() {
             onCreateConversation={handleCreateConversation}
             currentConversationId={conversationId}
             friends={user?.friends || []}
-            currentUserId={userId} 
+            currentUserId={userId}
           />
         </div>
       </div>
