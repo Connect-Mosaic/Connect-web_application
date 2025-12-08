@@ -3,7 +3,7 @@ import "./LoginPage.css";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
-import { api } from "../apis/client";   // ✅ IMPORT API WRAPPER
+import { api } from "../apis/client";
 
 function LoginPage({ setIsLoggedIn }) {
   const navigate = useNavigate();
@@ -27,7 +27,6 @@ function LoginPage({ setIsLoggedIn }) {
         return;
       }
 
-      // ✅ Store BOTH token + user INSIDE jwt
       localStorage.setItem(
         "jwt",
         JSON.stringify({

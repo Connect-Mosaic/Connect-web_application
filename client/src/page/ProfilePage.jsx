@@ -195,7 +195,7 @@ function ProfilePage() {
 
       if (updatedUser) {
         syncUser(updatedUser);
-        setCacheKey(Date.now()); // 🔥 FORCE IMAGE REFRESH
+        setCacheKey(Date.now());
       }
 
       alert("Profile photo updated!");

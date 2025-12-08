@@ -126,26 +126,26 @@ function MapPage() {
             attribution='&copy; OpenStreetMap contributors'
           />
 
-        {/* Render all event markers */}
-        {events.map((ev) => {
-          const key = ev.id || ev._id; // 🔥 Fix: use API id, fallback to _id
-          return (
-            <Marker
-              key={key}
-              position={[ev.coordinates.lat, ev.coordinates.lng]}
-              icon={defaultIcon}
-              ref={(ref) => (markerRefs.current[key] = ref)} // 🔥 Fix reference key
-            >
-              <Popup>
-                <b>{ev.title}</b>
-                <br />
-                📍 {ev.location}
-                <br />
-                📅 {new Date(ev.date).toLocaleDateString()}
-              </Popup>
-            </Marker>
-          );
-        })}
+          {/* Render all event markers */}
+          {events.map((ev) => {
+            const key = ev.id || ev._id;
+            return (
+              <Marker
+                key={key}
+                position={[ev.coordinates.lat, ev.coordinates.lng]}
+                icon={defaultIcon}
+                ref={(ref) => (markerRefs.current[key] = ref)}
+              >
+                <Popup>
+                  <b>{ev.title}</b>
+                  <br />
+                  📍 {ev.location}
+                  <br />
+                  📅 {new Date(ev.date).toLocaleDateString()}
+                </Popup>
+              </Marker>
+            );
+          })}
 
         </MapContainer>
       </div>

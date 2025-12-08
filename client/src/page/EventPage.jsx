@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../apis/client";
 import EventForm from "../components/EventForm";
 import "./EventPage.css";
-import { joinEvent, leaveEvent } from "../apis/event"; // adjust path if needed
+import { joinEvent, leaveEvent } from "../apis/event";
 
 
 function EventPage() {
@@ -81,7 +81,6 @@ function EventPage() {
         return;
       }
 
-      // Send join request WITH authorization header
       await api.post(
         `/api/events/${eventId}/join`,
         {},

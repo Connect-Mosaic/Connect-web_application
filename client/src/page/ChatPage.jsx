@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams } from 'react-router-dom'; // For handling URL query params
+import { useSearchParams } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css'; // For icons if needed
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import ChatSidebar from "../components/ChatSidebar.jsx";
 import ChatWindow from "../components/ChatWindow.jsx";
 import MessageInput from "../components/MessageInput.jsx";
@@ -13,9 +13,8 @@ import {
 } from "../apis/conversation";
 
 function ChatPage() {
-  const [searchParams] = useSearchParams(); // Hook to read URL query params
+  const [searchParams] = useSearchParams();
   const [conversationId, setConversationId] = useState(() => {
-    // Initial state: Prioritize URL param, then localStorage
     const urlConvId = searchParams.get('conversation');
     const savedId = localStorage.getItem('selectedConversationId');
     return urlConvId || savedId || null;
@@ -24,13 +23,13 @@ function ChatPage() {
   const [usersMap, setUsersMap] = useState({});
   const [input, setInput] = useState("");
   const [conversations, setConversations] = useState([]);
-  const [isLoadingConversations, setIsLoadingConversations] = useState(true); // New: Track loading state
+  const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newChatName, setNewChatName] = useState("");
   const [newChatParticipants, setNewChatParticipants] = useState("");
 
   const chatContainerRef = useRef(null);
-  const hasValidatedRef = useRef(false); // New: Prevent repeated invalidation during manual switches
+  const hasValidatedRef = useRef(false);
   const jwt = JSON.parse(localStorage.getItem("jwt"));
   const jwtRaw = localStorage.getItem("jwt");
   let user = null;
@@ -42,30 +41,26 @@ function ChatPage() {
     userId = user?.id || user?._id || null;
   }
 
-  // Effect to sync conversationId to localStorage
   useEffect(() => {
     if (conversationId) {
       localStorage.setItem('selectedConversationId', conversationId);
     }
   }, [conversationId]);
 
-  // Effect to handle URL param changes (e.g., browser navigation)
   useEffect(() => {
     const urlConvId = searchParams.get('conversation');
     if (urlConvId && urlConvId !== conversationId) {
       setConversationId(urlConvId);
-      hasValidatedRef.current = false; // Reset validation for new URL
+      hasValidatedRef.current = false;
     }
-  }, [searchParams]); // Removed conversationId dep to avoid loops
+  }, [searchParams]);
 
-  // Effect to auto-select or validate conversation when conversations load
   useEffect(() => {
     if (conversations.length === 0 || isLoadingConversations) return;
 
     setIsLoadingConversations(false);
 
     if (!conversationId) {
-      // Auto-select first if no ID
       const targetId = conversations[0]?.conversation_id;
       if (targetId) {
         setConversationId(targetId);
@@ -73,7 +68,6 @@ function ChatPage() {
       return;
     }
 
-    // Validate only once (e.g., on initial load or URL change)
     if (hasValidatedRef.current) return;
 
     const isValid = conversations.find(conv => conv.conversation_id === conversationId);
@@ -83,9 +77,8 @@ function ChatPage() {
     }
 
     hasValidatedRef.current = true;
-  }, [conversations, isLoadingConversations, conversationId]); // Include isLoading to wait for fetch
+  }, [conversations, isLoadingConversations, conversationId]);
 
-  // Fetch user conversations periodically
   useEffect(() => {
     let isMounted = true;
     const fetchConversations = async () => {
@@ -114,7 +107,6 @@ function ChatPage() {
     };
   }, []);
 
-  // Fetch messages for the current conversation periodically
   const fetchMessages = useCallback(async () => {
     if (!conversationId) return;
     try {
@@ -136,12 +128,11 @@ function ChatPage() {
 
   useEffect(() => {
     if (!conversationId) return;
-    fetchMessages(); // Initial fetch
+    fetchMessages();
     const interval = setInterval(fetchMessages, 10000);
     return () => clearInterval(interval);
   }, [conversationId, fetchMessages]);
 
-  // Update usersMap dynamically based on messages
   useEffect(() => {
     const senderIds = [...new Set(messages.map((m) => m.sender))];
     const newUsersMap = { ...usersMap };
@@ -155,7 +146,7 @@ function ChatPage() {
     if (hasUpdate) {
       setUsersMap(newUsersMap);
     }
-  }, [messages, userId, usersMap]); // Added usersMap dep if needed for reactivity
+  }, [messages, userId, usersMap]);
 
   const handleSend = async () => {
     const messageContent = input.trim();
@@ -206,7 +197,7 @@ function ChatPage() {
     try {
       const payload = {
         type: "private",
-        participants: [participant], // the backend demands an array
+        participants: [participant],
         display_name: null
       };
 
@@ -243,7 +234,7 @@ function ChatPage() {
             conversations={conversations}
             onSelectConversation={(newId) => {
               setConversationId(newId);
-              hasValidatedRef.current = true; // Mark as manual switch
+              hasValidatedRef.current = true;
             }}
             onCreateConversation={handleCreateConversation}
             currentConversationId={conversationId}
@@ -262,7 +253,6 @@ function ChatPage() {
           {conversationId && !isLoadingConversations ? (
             <>
               <div
-                // ref={chatContainerRef} // If moved to ChatWindow, can remove
                 className="flex-grow-1 overflow-auto p-3 bg-light position-relative"
                 style={{ backgroundColor: '#e3f2fd' }}
               >
@@ -301,7 +291,7 @@ function ChatPage() {
             conversations={conversations}
             onSelectConversation={(newId) => {
               setConversationId(newId);
-              hasValidatedRef.current = true; // Mark as manual switch
+              hasValidatedRef.current = true;
             }}
             onCreateConversation={handleCreateConversation}
             currentConversationId={conversationId}
