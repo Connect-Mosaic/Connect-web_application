@@ -86,6 +86,13 @@ app.get("/api/health", (req, res) => {
 ============================================================ */
 app.use("/api-docs", swaggerUiMiddleware.serve, swaggerUiMiddleware.setup(swaggerSpec));
 
+
+app.get("*", (req, res) => {
+  res.sendFile(
+    path.join(CURRENT_WORKING_DIR, "dist/app", "index.html")
+  );
+});
+
 /* ============================================================
    GLOBAL ERROR HANDLER
 ============================================================ */

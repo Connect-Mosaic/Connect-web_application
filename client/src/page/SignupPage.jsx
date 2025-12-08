@@ -113,7 +113,7 @@ function SignupPage() {
 
       if (res.success) {
         alert("Account created successfully!");
-        window.location.href = "/login";
+        navigate("/login");
       } else {
         alert("Signup failed: " + res.message);
       }
