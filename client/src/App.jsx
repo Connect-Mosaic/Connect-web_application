@@ -26,7 +26,7 @@ function App() {
     localStorage.removeItem("jwt");
     localStorage.removeItem("user");
     setIsLoggedIn(false);
-    navigate("/login");
+    window.location.href = "/login";
   };
 
   // Protected Route Wrapper

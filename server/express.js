@@ -86,13 +86,14 @@ app.get("/api/health", (req, res) => {
 ============================================================ */
 app.use("/api-docs", swaggerUiMiddleware.serve, swaggerUiMiddleware.setup(swaggerSpec));
 
-
-app.get("*", (req, res) => {
-  res.sendFile(
-    path.join(CURRENT_WORKING_DIR, "dist/app", "index.html")
-  );
+app.get("*path", (req, res) => {
+  const apiPrefixes = ["/api", "/api-docs"];
+  const isApiPath = apiPrefixes.some((prefix) => req.path.startsWith(prefix));
+  if (isApiPath) {
+    return res.status(404).json({ error: "Not Found" });
+  }
+  res.sendFile(path.join(CURRENT_WORKING_DIR, "dist/app", "index.html"));
 });
-
 /* ============================================================
    GLOBAL ERROR HANDLER
 ============================================================ */
