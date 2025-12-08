@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { api } from "../apis/client";
 import EventForm from "../components/EventForm";
 import "./EventPage.css";
+import { joinEvent, leaveEvent } from "../apis/event"; // adjust path if needed
+
 
 function EventPage() {
   const [events, setEvents] = useState([]);
@@ -13,8 +15,8 @@ function EventPage() {
 
   // Load current user
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) setCurrentUser(JSON.parse(userData));
+    const auth = JSON.parse(localStorage.getItem("jwt"));
+    if (auth?.user) setCurrentUser(auth.user);
   }, []);
 
   // Format date
@@ -26,6 +28,23 @@ function EventPage() {
       day: "numeric",
     });
   };
+
+  const toggleJoin = async (event) => {
+    const eventId = event.id || event._id;
+
+    try {
+      if (hasJoined(event)) {
+        await leaveEvent(eventId);
+      } else {
+        await joinEvent(eventId);
+      }
+
+      await fetchEvents();
+    } catch (err) {
+      console.error("Join/Leave error:", err);
+    }
+  };
+
 
   // Fetch events
   const fetchEvents = async () => {
@@ -54,13 +73,26 @@ function EventPage() {
   // Join event
   const handleJoin = async (eventId) => {
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (!user) {
+      // Load auth from localStorage
+      const auth = JSON.parse(localStorage.getItem("jwt"));
+
+      if (!auth?.user) {
         alert("You must be logged in to join an event.");
         return;
       }
 
-      await api.post(`/api/events/${eventId}/join`);
+      // Send join request WITH authorization header
+      await api.post(
+        `/api/events/${eventId}/join`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        }
+      );
+
+      // Refresh events
       await fetchEvents();
       alert("Successfully joined the event!");
     } catch (err) {
@@ -68,6 +100,7 @@ function EventPage() {
       alert("Failed to join event. Please try again.");
     }
   };
+
 
   // Check if user is organizer
   const isUserOrganizer = (event) => {
@@ -175,15 +208,13 @@ function EventPage() {
               </div>
 
               <div className="event-actions">
-                {hasJoined(event) ? (
-                  <button className="joined-btn" disabled>
-                    ✔ Joined
-                  </button>
-                ) : (
-                  <button onClick={() => handleJoin(event.id || event._id)}>
-                    Join Event
-                  </button>
-                )}
+                <button
+                  className={hasJoined(event) ? "joined-btn" : ""}
+                  onClick={() => toggleJoin(event)}
+                >
+                  {hasJoined(event) ? "✔ Joined (Leave)" : "Join Event"}
+                </button>
+
 
                 {isUserOrganizer(event) && (
                   <Link to={`/events/${event.id || event._id}/edit`} className="edit-btn">

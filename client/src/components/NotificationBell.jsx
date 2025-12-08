@@ -25,28 +25,35 @@ import "./NotificationBell.css";
     // NEW — friend request handlers
     // -----------------------------
     const handleAccept = async (e, notif) => {
-        e.stopPropagation();
+      e.stopPropagation();
 
-        try {
-            await acceptFriendRequestApi(notif.meta.senderId);
-            await markNotificationRead(notif.notification_id);
-            await loadNotifications(); // refresh UI
-        } catch (err) {
-            console.error("Failed to accept friend request:", err);
-        }
-        };
+      const senderId = notif.meta.senderId?.toString?.() || notif.meta.senderId;
+      console.log("ACCEPT using senderId:", senderId);
 
-        const handleDecline = async (e, notif) => {
-        e.stopPropagation();
+      try {
+        await acceptFriendRequestApi(senderId);
+        await markNotificationRead(notif.notification_id);
+        await loadNotifications();
+      } catch (err) {
+        console.error("Failed to accept friend request:", err);
+      }
+    };
 
-        try {
-            await rejectFriendRequestApi(notif.meta.senderId);
-            await markNotificationRead(notif.notification_id);
-            await loadNotifications(); // refresh UI
-        } catch (err) {
-            console.error("Failed to reject friend request:", err);
-        }
-        };
+    const handleDecline = async (e, notif) => {
+      e.stopPropagation();
+
+      const senderId = notif.meta.senderId?.toString?.() || notif.meta.senderId;
+      console.log("DECLINE using senderId:", senderId);
+
+      try {
+        await rejectFriendRequestApi(senderId);
+        await markNotificationRead(notif.notification_id);
+        await loadNotifications();
+      } catch (err) {
+        console.error("Failed to reject friend request:", err);
+      }
+    };
+
 
 
   // -----------------------------
@@ -101,57 +108,64 @@ import "./NotificationBell.css";
       {/* Dropdown */}
       {show && (
         <div className="notification-dropdown">
-          {notifications.length === 0 ? (
-            <div className="notification-item empty">No notifications yet.</div>
+          {/* Only show unread notifications */}
+          {notifications.filter((n) => !n.is_read).length === 0 ? (
+              <div className="notification-item empty">No notifications.</div>
           ) : (
-            notifications.map((notif) => (
-                <div
-                    key={notif.notification_id}
-                    className={`notification-item ${notif.is_read ? "read" : "unread"}`}
-                    onClick={async () => {
-                    
-                    // Friend request notifications should NOT trigger default click behavior
-                    if (notif.type === "friend_request") return;
+              notifications
+                .filter((n) => !n.is_read)
+                .map((notif) => (
+                  <div
+                      key={notif.notification_id}
+                      className="notification-item unread"
+                      onClick={async () => {
+                        if (notif.type === "friend_request") return;
 
-                    try {
-                        // Existing behavior stays exactly the same
                         await markNotificationRead(notif.notification_id);
                         await loadNotifications();
 
-                        if (notif.link) window.location.href = notif.link;
-                    } catch (err) {
-                        console.error("Failed to mark notification as read:", err);
-                    }
+                        // Default: follow stored link
+                        if (notif.link) {
+                            window.location.href = notif.link;
+                            return;
+                        }
+
+                        // Fallback: navigate to conversation if meta contains it
+                        if (notif.meta?.conversationId) {
+                            window.location.href = `/chat?conversation=${notif.meta.conversationId}`;
+                            return;
+                        }
+
+                        console.warn("Notification has no navigation target:", notif);
                     }}
-                >
-                    <p>{notif.message}</p>
 
-                    <span className="notif-time">
-                    {formatTimestamp(notif.created_at || notif.createdAt)}
-                    </span>
+                  >
+                      <p>{notif.message}</p>
+                      <span className="notif-time">
+                        {formatTimestamp(notif.created_at || notif.createdAt)}
+                      </span>
 
+                      {notif.type === "friend_request" && (
+                          <div className="friend-request-actions">
+                              <button
+                                  className="btn-accept"
+                                  onClick={(e) => handleAccept(e, notif)}
+                              >
+                                  ✓ Accept
+                              </button>
 
-                    {/* ⭐ Only friend requests show buttons */}
-                    {notif.type === "friend_request" && (
-                    <div className="friend-request-actions">
-                        <button
-                        className="btn-accept"
-                        onClick={(e) => handleAccept(e, notif)}
-                        >
-                        ✓ Accept
-                        </button>
-
-                        <button
-                        className="btn-decline"
-                        onClick={(e) => handleDecline(e, notif)}
-                        >
-                        ✕ Decline
-                        </button>
-                    </div>
-                    )}
-                </div>
+                              <button
+                                  className="btn-decline"
+                                  onClick={(e) => handleDecline(e, notif)}
+                              >
+                                  ✕ Decline
+                              </button>
+                          </div>
+                      )}
+                  </div>
                 ))
           )}
+
         </div>
       )}
     </div>

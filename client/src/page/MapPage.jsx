@@ -57,22 +57,21 @@ function MapPage() {
 
     try {
       const res = await fetch(
-        `https://connect-web-application.onrender.com/api/events/search?q=${encodeURIComponent(
-          search
-        )}`
+        `https://connect-web-application.onrender.com/api/events/search?q=${encodeURIComponent(search)}`
       );
 
       const json = await res.json();
       console.log("Search result:", json);
 
-      const resultEvents = json.data?.events || [];
+      // 🔥 FIXED — backend returns { success, message, data: [] }
+      const resultEvents = json.data || [];
 
       if (resultEvents.length === 0) {
         alert("No matching event found.");
         return;
       }
 
-      const event = resultEvents[0]; // Pick first matched event
+      const event = resultEvents[0];
 
       if (!event.coordinates) {
         alert("This event does not have coordinates.");
@@ -83,13 +82,15 @@ function MapPage() {
 
       setFlyToPos([lat, lng]);
 
-      const marker = markerRefs.current[event._id] || markerRefs.current[event.id];
+      const key = event.id || event._id;
+      const marker = markerRefs.current[key];
       if (marker) marker.openPopup();
 
     } catch (err) {
       console.error("Search error:", err);
     }
   };
+
 
   return (
     <div className="map-page">
@@ -125,13 +126,15 @@ function MapPage() {
             attribution='&copy; OpenStreetMap contributors'
           />
 
-          {/* Render all event markers */}
-          {events.map((ev) => (
+        {/* Render all event markers */}
+        {events.map((ev) => {
+          const key = ev.id || ev._id; // 🔥 Fix: use API id, fallback to _id
+          return (
             <Marker
-              key={ev._id}
+              key={key}
               position={[ev.coordinates.lat, ev.coordinates.lng]}
               icon={defaultIcon}
-              ref={(ref) => (markerRefs.current[ev._id] = ref)}
+              ref={(ref) => (markerRefs.current[key] = ref)} // 🔥 Fix reference key
             >
               <Popup>
                 <b>{ev.title}</b>
@@ -141,7 +144,9 @@ function MapPage() {
                 📅 {new Date(ev.date).toLocaleDateString()}
               </Popup>
             </Marker>
-          ))}
+          );
+        })}
+
         </MapContainer>
       </div>
     </div>

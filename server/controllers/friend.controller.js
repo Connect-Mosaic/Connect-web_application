@@ -212,3 +212,25 @@ export const unfriend = async (req, res) => {
     return res.json(errorResponse("Failed to unfriend user."));
   }
 };
+
+/* ============================================================
+    GET FRIEND LIST
+============================================================ */
+export const getFriends = async (req, res) => {
+  try {
+    const userId = req.auth.userId;
+
+    const user = await User.findById(userId)
+      .populate("friends", "first_name last_name profile_picture _id")
+      .select("friends");
+
+    if (!user)
+      return res.json(errorResponse("User not found."));
+
+    return res.json(successResponse("Friends retrieved.", user.friends));
+
+  } catch (err) {
+    console.error("getFriends error:", err);
+    return res.json(errorResponse("Failed to get friends."));
+  }
+};

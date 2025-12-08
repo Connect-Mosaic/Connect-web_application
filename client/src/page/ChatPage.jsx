@@ -31,8 +31,16 @@ function ChatPage() {
 
   const chatContainerRef = useRef(null);
   const hasValidatedRef = useRef(false); // New: Prevent repeated invalidation during manual switches
-  const user = JSON.parse(localStorage.getItem("user"));
-  const userId = user?._id;
+  const jwt = JSON.parse(localStorage.getItem("jwt"));
+  const jwtRaw = localStorage.getItem("jwt");
+    let user = null;
+    let userId = null;
+
+    if (jwtRaw) {
+    const parsed = JSON.parse(jwtRaw);
+    user = parsed.user || null;
+    userId = user?.id || user?._id || null;
+    }
 
   // Effect to sync conversationId to localStorage
   useEffect(() => {
@@ -193,19 +201,36 @@ function ChatPage() {
       );
     }
   };
-
-  const handleCreateConversation = async (chatDetails) => {
+  
+    const handleCreateConversation = async ({ participant }) => {
     try {
-      const newConversationData = await createConversation(chatDetails);
-      setConversations((prev) => [newConversationData, ...prev]);
-      if (!conversationId) {
-        setConversationId(newConversationData.conversation_id);
-      }
+        const payload = {
+        type: "private",
+        participants: [participant], // the backend demands an array
+        display_name: null
+        };
+
+        const res = await createConversation(payload);
+        const newConv = res?.data?.data || res?.data || res;
+
+        if (!newConv?.conversation_id) {
+        console.error("Invalid conversation response:", newConv);
+        return;
+        }
+
+        setConversations(prev => {
+        const exists = prev.some(c => c.conversation_id === newConv.conversation_id);
+        return exists ? prev : [newConv, ...prev];
+        });
+
+        setConversationId(newConv.conversation_id);
+
     } catch (error) {
-      console.error("Error creating conversation:", error);
-      alert("Failed to create conversation. Please try again.");
+        console.error("Error creating conversation:", error);
     }
-  };
+    };
+
+
 
   const currentConversation = conversations.find((conv) => conv.conversation_id === conversationId);
 
@@ -217,12 +242,13 @@ function ChatPage() {
           <ChatSidebar
             conversations={conversations}
             onSelectConversation={(newId) => {
-              console.log('Switching to conversation:', newId); // Debug log
               setConversationId(newId);
               hasValidatedRef.current = true; // Mark as manual switch
             }}
             onCreateConversation={handleCreateConversation}
             currentConversationId={conversationId}
+            friends={user?.friends || []}
+            currentUserId={userId} 
           />
         </div>
 
@@ -274,12 +300,13 @@ function ChatPage() {
           <ChatSidebar
             conversations={conversations}
             onSelectConversation={(newId) => {
-              console.log('Mobile switching to conversation:', newId); // Debug log
               setConversationId(newId);
               hasValidatedRef.current = true; // Mark as manual switch
             }}
             onCreateConversation={handleCreateConversation}
             currentConversationId={conversationId}
+            friends={user?.friends || []}
+            currentUserId={userId} 
           />
         </div>
       </div>

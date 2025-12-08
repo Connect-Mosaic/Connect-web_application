@@ -55,15 +55,18 @@ const sendMessage = async (req, res) => {
         (conv.participants || []).forEach(async participant => {
             const participantId = participant.user_id?.toString();
             if (!participantId || participantId === userId) return;
-            const notification = new Notification({
+
+            await Notification.create({
                 userId: participantId,
                 title: "New Message",
                 message: `You have a new message in conversation ${conv.display_name || "Unnamed Conversation"}.`,
                 type: "info",
+                link: `/chat?conversation=${conversation_id}`,   // <--- navigate directly
+                meta: { conversationId: conversation_id },       // <--- FIXED KEY
                 isRead: false
             });
-            await notification.save();
         });
+
 
         const messageData = {
             login_user_id: userId,

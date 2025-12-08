@@ -14,6 +14,7 @@ import ProfilePage from "./page/ProfilePage";
 import AdminManagementPage from "./page/AdminManagementPage";
 import SearchPage from "./page/SearchPage";
 import EventDetail from "./page/EventDetail";
+import EventForm from "./components/EventForm"
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -64,6 +65,18 @@ function App() {
             </Protected>
           }
         />
+
+        <Route
+          path="/events/:id/edit"
+          element={
+            <Protected>
+              <MainLayout isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+                <EventForm />
+              </MainLayout>
+            </Protected>
+          }
+        />
+
 
         <Route
           path="/events/:id"

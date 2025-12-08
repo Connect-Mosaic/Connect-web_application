@@ -67,25 +67,41 @@ const getUserConversations = async (req, res) => {
 
         const conversations = await Conversation.find({
             "participants.user_id": userId
-        }).sort({ "last_message.timestamp": -1 });
+        })
+        .populate("participants.user_id", "first_name last_name profile_picture email")
+        .sort({ "last_message.timestamp": -1 });
 
         console.info('getUserConversations success', { userId, count: conversations.length });
+
         const responseConversations = conversations.map(convObj => ({
-            // filter participants to only include user IDs and not owner_id
-            participant_user_id: convObj.participants.filter(p => p.user_id.toString() !== convObj.owner_id.toString()).map(p => p.user_id),
+            // REQUIRED by frontend
             conversation_id: convObj._id,
+
+            // fully populated participants
+            participants: convObj.participants.map(p => ({
+                _id: p.user_id._id,
+                first_name: p.user_id.first_name,
+                last_name: p.user_id.last_name,
+                profile_picture: p.user_id.profile_picture
+            })),
+
             last_message: convObj.last_message ? convObj.last_message.content : null,
             last_message_timestamp: convObj.last_message ? convObj.last_message.timestamp : null,
-            display_name: convObj.display_name || "Unnamed Conversation",
+
+            // allow ChatSidebar’s naming logic to kick in
+            display_name: convObj.display_name || "",
+
             display_image: convObj.display_image || null,
             unread_count: convObj.unread_count ? convObj.unread_count.get(userId) || 0 : 0
         }));
+
         res.json(successResponse("User conversations retrieved", responseConversations));
     } catch (err) {
         console.error('getUserConversations error', err);
         res.json(errorResponse(err.message));
     }
 };
+
 
 const getConversationById = async (req, res) => {
     try {

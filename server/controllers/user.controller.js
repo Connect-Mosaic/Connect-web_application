@@ -152,6 +152,8 @@ const uploadProfilePhoto = async (req, res) => {
 
     if (!updatedUser)
       return res.status(404).json({ error: "User not found" });
+      console.log("File received:", req.file);
+      console.log("Body received:", req.body);
 
     return res.json(
       successResponse("Profile updated", updatedUser)
@@ -172,13 +174,13 @@ const uploadGalleryPhoto = async (req, res) => {
 
     const filePath = `/uploads/gallery/${req.file.filename}`;
 
-    const user = await User.findById(req.params.userId);
+    let user = await User.findById(req.params.userId);
     user.photos.push(filePath);
-    await user.save();
+    user = await user.save(); // ensure the updated user is returned
 
     return res.json(
       successResponse("Photo added to gallery", {
-        photoUrl: filePath,
+        user,            // ← FULL UPDATED USER HERE
         photos: user.photos
       })
     );
@@ -189,6 +191,7 @@ const uploadGalleryPhoto = async (req, res) => {
     });
   }
 };
+
 
 /* ============================================================
    EXPORT ONLY USER-RELATED FUNCTIONS

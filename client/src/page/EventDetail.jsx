@@ -2,21 +2,31 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { api } from "../apis/client";
 import "./EventDetail.css";
+import { joinEvent, leaveEvent } from "../apis/event";
+import EventForm from "../components/EventForm";   // ✅ IMPORTANT: Add this import
 
 function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showEditForm, setShowEditForm] = useState(false); // ✅ edit modal control
 
+  /* ================================
+     LOAD USER
+  ================================= */
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setCurrentUser(JSON.parse(userData));
+    const auth = JSON.parse(localStorage.getItem("jwt"));
+    if (auth?.user) {
+      setCurrentUser(auth.user);
     }
   }, []);
 
+  /* ================================
+     FETCH EVENT
+  ================================= */
   const fetchEvent = async () => {
     try {
       const res = await api.get(`/api/events/${id}`);
@@ -33,38 +43,44 @@ function EventDetail() {
     fetchEvent();
   }, [id]);
 
-  const handleJoin = async () => {
-    if (!currentUser) {
-      alert("You must be logged in to join an event.");
-      navigate("/login");
-      return;
-    }
+  /* ================================
+     JOIN / LEAVE
+  ================================= */
+  const hasJoined = () => {
+    if (!currentUser || !event?.participants) return false;
+    const myId = currentUser.id || currentUser._id;
+    return event.participants.some(p => (p._id || p.id) === myId);
+  };
 
+  const toggleJoin = async () => {
     try {
-      const token = localStorage.getItem("jwt");
-      const response = await fetch(`http://localhost:3000/api/events/${id}/join`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const data = await response.json();
-      console.log("Join response:", data);
-      
-      if (response.ok) {
-        await fetchEvent();
-        alert("Successfully joined the event!");
+      if (hasJoined()) {
+        await leaveEvent(id);
       } else {
-        alert(data.message || "Failed to join event.");
+        await joinEvent(id);
       }
+      await fetchEvent();
     } catch (err) {
-      console.error("Join error:", err);
-      alert("Failed to join event. Please try again.");
+      console.error("Toggle error:", err);
+      alert("Unable to update participation.");
     }
   };
 
+  /* ================================
+     ORGANIZER CHECK
+  ================================= */
+  const isUserOrganizer = () => {
+    if (!currentUser || !event?.organizer) return false;
+
+    const myId = currentUser.id || currentUser._id;
+    const orgId = event.organizer._id || event.organizer.id;
+
+    return orgId === myId;
+  };
+
+  /* ================================
+     FORMAT HELPERS
+  ================================= */
   const formatDate = (isoString) => {
     if (!isoString) return "Unknown";
     return new Date(isoString).toLocaleDateString("en-US", {
@@ -77,17 +93,14 @@ function EventDetail() {
   const formatTime = (timeString) => {
     if (!timeString) return "";
     return new Date(`1970-01-01T${timeString}`).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
-  const isUserOrganizer = () => {
-    if (!currentUser || !event?.organizer) return false;
-    // Check both possible formats: object with _id or just the ID string
-    return event.organizer._id === currentUser._id || event.organizer === currentUser._id;
-  };
-
+  /* ================================
+     LOADING / NOT FOUND
+  ================================= */
   if (loading) {
     return (
       <div className="event-details-container">
@@ -105,93 +118,122 @@ function EventDetail() {
     );
   }
 
+  /* ================================
+     RENDER
+  ================================= */
   return (
-    <div className="event-details-container">
-      <Link to="/events" className="back-button">← Back to Events</Link>
-
-      <div className="event-details-header">
-        <img
-          src={event.image || "/no-image.png"}
-          alt={event.title}
-          className="event-details-image"
+    <>
+      {/* ===========================
+          EDIT EVENT MODAL
+      ============================ */}
+      {showEditForm && (
+        <EventForm
+          mode="edit"
+          initialData={event}
+          onSubmit={async (payload) => {
+            await api.put(`/api/events/${id}`, payload);
+            await fetchEvent();
+            setShowEditForm(false);
+          }}
+          onClose={() => setShowEditForm(false)}
         />
+      )}
 
-        <div className="event-details-info">
-          <h1>{event.title}</h1>
+      <div className="event-details-container">
+        <Link to="/events" className="back-button">← Back to Events</Link>
 
-          <p><strong>Date:</strong> {formatDate(event.date)}</p>
-          <p><strong>Time:</strong> {formatTime(event.startTime)} – {formatTime(event.endTime)}</p>
-          <p><strong>Location:</strong> {event.location}</p>
+        <div className="event-details-header">
+          <img
+            src={event.image || "/no-image.png"}
+            alt={event.title}
+            className="event-details-image"
+          />
 
-          {event.organizer && (
-            <p>
-              <strong>Organized by:</strong>{" "}
-              {event.organizer.first_name 
-                ? `${event.organizer.first_name} ${event.organizer.last_name}`
-                : event.organizer.email || "Unknown Organizer"
-              }
-            </p>
-          )}
+          <div className="event-details-info">
+            <h1>{event.title}</h1>
 
-          {event.capacity && (
-            <p>
-              <strong>Capacity:</strong> {event.participants?.length || 0} / {event.capacity}
-            </p>
-          )}
+            <p><strong>Date:</strong> {formatDate(event.date)}</p>
+            <p><strong>Time:</strong> {formatTime(event.startTime)} – {formatTime(event.endTime)}</p>
+            <p><strong>Location:</strong> {event.location}</p>
 
-          <div className="event-tags">
-            {event.interests?.map((tag, i) => (
-              <span key={i} className="event-tag">{tag}</span>
-            ))}
-          </div>
-
-          <div className="event-details-actions">
-            <button className="details-join-btn" onClick={handleJoin}>
-              Join Event
-            </button>
-
-            {/* EDIT BUTTON - Only show for event organizer */}
-            {isUserOrganizer() && (
-              <Link to={`/events/${id}/edit`} className="details-edit-btn">
-                Edit Event
-              </Link>
+            {event.organizer && (
+              <p>
+                <strong>Organized by:</strong>{" "}
+                {event.organizer.first_name
+                  ? `${event.organizer.first_name} ${event.organizer.last_name}`
+                  : event.organizer.email || "Unknown Organizer"}
+              </p>
             )}
+
+            {event.capacity && (
+              <p>
+                <strong>Capacity:</strong> {event.participants?.length || 0} / {event.capacity}
+              </p>
+            )}
+
+            <div className="event-tags">
+              {event.interests?.map((tag, i) => (
+                <span key={i} className="event-tag">{tag}</span>
+              ))}
+            </div>
+
+            <div className="event-details-actions">
+
+              {/* JOIN / LEAVE BUTTON */}
+              <button
+                className={hasJoined() ? "details-join-btn joined" : "details-join-btn"}
+                onClick={toggleJoin}
+              >
+                {hasJoined() ? "✔ Joined (Leave)" : "Join Event"}
+              </button>
+
+              {/* EDIT BUTTON */}
+              {isUserOrganizer() && (
+                <button
+                  className="details-edit-btn"
+                  onClick={() => setShowEditForm(true)}
+                >
+                  Edit Event
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="event-description-box">
-        <h2>Description</h2>
-        <p>{event.description || "No description available."}</p>
-      </div>
+        {/* DESCRIPTION */}
+        <div className="event-description-box">
+          <h2>Description</h2>
+          <p>{event.description || "No description available."}</p>
+        </div>
 
-      <div className="event-participants-box">
-        <h2>Participants ({event.participants?.length || 0})</h2>
+        {/* PARTICIPANTS */}
+        <div className="event-participants-box">
+          <h2>Participants ({event.participants?.length || 0})</h2>
 
-        {event.participants?.length > 0 ? (
-          <div className="participants-list">
-            {event.participants.map((user, index) => (
-              <div key={user._id || index} className="participant-item">
-                <div className="participant-avatar"></div>
-                <div className="participant-info">
-                  <span className="participant-name">
-                    {user.first_name 
-                      ? `${user.first_name} ${user.last_name}`
-                      : user.email || "Unknown User"
-                    }
-                  </span>
-                  {user._id === currentUser?._id && (
-                    <span className="participant-you">(You)</span>
-                  )}
+          {event.participants?.length > 0 ? (
+            <div className="participants-list">
+              {event.participants.map((user, index) => (
+                <div key={user._id || index} className="participant-item">
+                  <div className="participant-avatar"></div>
+                  <div className="participant-info">
+                    <span className="participant-name">
+                      {user.first_name
+                        ? `${user.first_name} ${user.last_name}`
+                        : user.email || "Unknown User"}
+                    </span>
+                    {user._id === currentUser?._id && (
+                      <span className="participant-you">(You)</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="no-participants">No participants yet.</p>
-        )}
+              ))}
+            </div>
+          ) : (
+            <p className="no-participants">No participants yet.</p>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -35,24 +35,30 @@ const login = async (req, res) => {
     );
 
     return res.json(
-      successResponse("Login successful", {
-        token,
-        user: {
-          id: user._id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          university: user.university,
-          program: user.program,
-          interests: user.interests,
-          bio: user.bio,
-          profile_picture: user.profile_picture,
-          photos: user.photos,
-          role: user.role,
-          createdAt: user.createdAt,
-        },
-      })
-    );
+    successResponse("Login successful", {
+      token,
+      user: {
+        id: user._id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        university: user.university,
+        program: user.program,
+        interests: user.interests,
+        bio: user.bio,
+        profile_picture: user.profile_picture,
+        photos: user.photos,
+        role: user.role,
+        createdAt: user.createdAt,
+
+        // ✅ NEW FIELDS NEEDED FOR CHAT FUNCTIONALITY
+        friends: user.friends || [],
+        sentRequests: user.sentRequests || [],
+        receivedRequests: user.receivedRequests || [],
+      },
+    })
+  );
+
   } catch (err) {
     console.error("[Auth] Login error:", err);
     return res.json(errorResponse("Could not sign in"));

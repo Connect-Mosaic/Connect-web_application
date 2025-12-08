@@ -121,20 +121,44 @@ const eventByID = async (req, res) => {
     }
 };
 
-/* ============================================================
-   UPDATE EVENT
-============================================================ */
+/* ======================================================
+   UPDATE EVENT  
+====================================================== */
 const update = async (req, res) => {
-    try {
-        let event = req.event;
-        event = extend(event, req.body);
-        await event.save();
+  try {
+    console.log("UPDATE PAYLOAD:", req.body);
 
-        return res.json(successResponse("Event updated successfully", event));
-    } catch (err) {
-        console.error("[Event:update] Error:", err);
-        return res.status(500).json(errorResponse(errorHandler(err)));
+    const updatedEvent = await Event.findByIdAndUpdate(
+      req.params.eventId,
+      req.body,
+      {
+        new: true,            // return updated doc
+        runValidators: true,   // validate fields
+      }
+    );
+
+    if (!updatedEvent) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found"
+      });
     }
+
+    return res.json({
+      success: true,
+      message: "Event updated successfully",
+      data: updatedEvent
+    });
+
+  } catch (err) {
+    console.error("[Event:update] Error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update event",
+      error: err.message
+    });
+  }
 };
 
 /* ============================================================

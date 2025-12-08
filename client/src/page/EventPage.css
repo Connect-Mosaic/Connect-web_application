@@ -167,3 +167,25 @@
 .event-title-link:hover h3 {
   text-decoration: underline;
 }
+
+.create-event-btn {
+  background: #3b3b3b;        /* Same dark style as other buttons */
+  color: white;
+  padding: 10px 26px;
+  font-size: 15px;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+  font-weight: 500;
+  box-shadow: 0px 3px 6px rgba(0,0,0,0.08);
+}
+
+.create-event-btn:hover {
+  background: #000000;
+  transform: translateY(-2px);
+}
+
+.create-event-btn:active {
+  transform: translateY(0px);
+}
